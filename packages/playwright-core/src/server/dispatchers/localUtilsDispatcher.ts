@@ -143,11 +143,11 @@ export class LocalUtilsDispatcher extends Dispatcher<{ guid: string }, channels.
     return { harId: harBackend.id };
   }
 
-  async harLookup(params: channels.LocalUtilsHarLookupParams, metadata: CallMetadata): Promise<channels.LocalUtilsHarLookupResult> {
+  async harLookup(params: channels.LocalUtilsHarLookupParams, metadata: CallMetadata, compare?: harComparator): Promise<channels.LocalUtilsHarLookupResult> {
     const harBackend = this._harBakends.get(params.harId);
     if (!harBackend)
       return { action: 'error', message: `Internal error: har was not opened` };
-    return await harBackend.lookup(params.url, params.method, params.headers, params.postData, params.isNavigationRequest);
+    return await harBackend.lookup(params.url, params.method, params.headers, params.postData, params.isNavigationRequest, compare);
   }
 
   async harClose(params: channels.LocalUtilsHarCloseParams, metadata: CallMetadata): Promise<void> {
@@ -217,6 +217,7 @@ export class LocalUtilsDispatcher extends Dispatcher<{ guid: string }, channels.
 
 const redirectStatus = [301, 302, 303, 307, 308];
 
+
 class HarBackend {
   readonly id = createGuid();
   private _harFile: har.HARFile;
@@ -229,7 +230,14 @@ class HarBackend {
     this._zipFile = zipFile;
   }
 
-  async lookup(url: string, method: string, headers: HeadersArray, postData: Buffer | undefined, isNavigationRequest: boolean): Promise<{
+  async lookup(
+    url: string,
+    method: string,
+    headers: HeadersArray,
+    postData: Buffer | undefined,
+    isNavigationRequest: boolean,
+    compare?: harComparator
+  ): Promise<{
       action: 'error' | 'redirect' | 'fulfill' | 'noentry',
       message?: string,
       redirectURL?: string,
@@ -238,7 +246,7 @@ class HarBackend {
       body?: Buffer }> {
     let entry;
     try {
-      entry = await this._harFindResponse(url, method, headers, postData);
+      entry = await this._harFindResponse(url, method, headers, postData, compare);
     } catch (e) {
       return { action: 'error', message: 'HAR error: ' + e.message };
     }
@@ -278,40 +286,36 @@ class HarBackend {
     return buffer;
   }
 
-  private async _harFindResponse(url: string, method: string, headers: HeadersArray, postData: Buffer | undefined): Promise<har.Entry | undefined> {
+  private async _harFindResponse(url: string, method: string, headers: HeadersArray, postData: Buffer | undefined, compare = defaultEntryCompare): Promise<har.Entry | undefined> {
     const harLog = this._harFile.log;
     const visited = new Set<har.Entry>();
     while (true) {
-      const entries: har.Entry[] = [];
-      for (const candidate of harLog.entries) {
-        if (candidate.request.url !== url || candidate.request.method !== method)
-          continue;
-        if (method === 'POST' && postData && candidate.request.postData) {
-          const buffer = await this._loadContent(candidate.request.postData);
-          if (!buffer.equals(postData))
-            continue;
-        }
-        entries.push(candidate);
-      }
+      const entriesWithScores = await Promise.all(harLog.entries
+          .map(async entry => ({
+            entry,
+            score: compare({
+              url: entry.request.url,
+              method: entry.request.method,
+              headers: entry.request.headers,
+              postData: entry.request.postData && await this._loadContent(entry.request.postData),
+            }, { url, method, headers, postData })
+          })));
 
-      if (!entries.length)
+      const matchingEntries = entriesWithScores
+          // Filter out non-matches.
+          .filter(({ score }) => score > 0)
+          // Sort by match score.
+          .sort((a, b) => b.score - a.score)
+          // Strip match score.
+          .map(({ entry }) => entry);
+
+      if (!matchingEntries.length)
         return;
 
-      let entry = entries[0];
-
-      // Disambiguate using headers - then one with most matching headers wins.
-      if (entries.length > 1) {
-        const list: { candidate: har.Entry, matchingHeaders: number }[] = [];
-        for (const candidate of entries) {
-          const matchingHeaders = countMatchingHeaders(candidate.request.headers, headers);
-          list.push({ candidate, matchingHeaders });
-        }
-        list.sort((a, b) => b.matchingHeaders - a.matchingHeaders);
-        entry = list[0].candidate;
-      }
-
-      if (visited.has(entry))
+      if (matchingEntries.every(entry => visited.has(entry)))
         throw new Error(`Found redirect cycle for ${url}`);
+
+      const entry = matchingEntries[0];
 
       visited.add(entry);
 
@@ -335,6 +339,35 @@ class HarBackend {
   dispose() {
     this._zipFile?.close();
   }
+}
+
+type harComparator = (
+  harEntryCandidate: {url: string, method: string, headers: HeadersArray, postData: Buffer | undefined},
+  request: {url: string, method: string, headers: HeadersArray, postData: Buffer | undefined}
+) => number;
+
+function defaultEntryCompare(
+  harEntryCandidate: {url: string, method: string, headers: HeadersArray, postData: Buffer | undefined},
+  request: {url: string, method: string, headers: HeadersArray, postData: Buffer | undefined}
+): number {
+  if (harEntryCandidate.method !== request.method)
+    return 0; // Method mismatch.
+  if (harEntryCandidate.url !== request.url)
+    return 0; // URL mismatch.
+
+  if (harEntryCandidate.method === 'POST') {
+    if (harEntryCandidate.postData || request.postData) {
+      if (!harEntryCandidate.postData || !request.postData)
+        return 0; // One has post data, the other does not.
+      if (!harEntryCandidate.postData.equals(request.postData))
+        return 0; // Post data mismatch.
+    }
+  }
+
+  // Disambiguate using headers - then one with most matching headers wins.
+  const matchingHeadersCount = countMatchingHeaders(request.headers, harEntryCandidate.headers);
+
+  return matchingHeadersCount;
 }
 
 function countMatchingHeaders(harHeaders: har.Header[], headers: HeadersArray): number {
