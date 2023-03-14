@@ -527,6 +527,7 @@ LocalUtils:
           items: NameValue
         postData: binary?
         isNavigationRequest: boolean
+        harComparator: HarComparator
       returns:
         action:
           type: enum
@@ -3441,3 +3442,10 @@ JsonPipe:
     closed:
       parameters:
         error: SerializedError?
+
+HarComparator:
+  parameters:
+    url: string?
+    method: string?
+    headers: HeadersArray?
+    postData: Buffer?

@@ -21,6 +21,7 @@ import type { LocalUtils } from './localUtils';
 import type { Route } from './network';
 import type { URLMatch } from './types';
 import type { Page } from './page';
+import type { harComparator } from '../server/dispatchers/localUtilsDispatcher';
 
 type HarNotFoundAction = 'abort' | 'fallback';
 
@@ -28,9 +29,9 @@ export class HarRouter {
   private _localUtils: LocalUtils;
   private _harId: string;
   private _notFoundAction: HarNotFoundAction;
-  private _options: { urlMatch?: URLMatch; baseURL?: string; };
+  private _options: { urlMatch?: URLMatch; baseURL?: string; harComparator?: harComparator};
 
-  static async create(localUtils: LocalUtils, file: string, notFoundAction: HarNotFoundAction, options: { urlMatch?: URLMatch }): Promise<HarRouter> {
+  static async create(localUtils: LocalUtils, file: string, notFoundAction: HarNotFoundAction, options: { urlMatch?: URLMatch, harComparator?: harComparator }): Promise<HarRouter> {
     const { harId, error } = await localUtils._channel.harOpen({ file });
     if (error)
       throw new Error(error);
@@ -53,7 +54,8 @@ export class HarRouter {
       method: request.method(),
       headers: (await request.headersArray()),
       postData: request.postDataBuffer() || undefined,
-      isNavigationRequest: request.isNavigationRequest()
+      isNavigationRequest: request.isNavigationRequest(),
+      compare: this._options.harComparator
     });
 
     if (response.action === 'redirect') {

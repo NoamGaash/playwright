@@ -431,6 +431,7 @@ export type LocalUtilsHarLookupParams = {
   headers: NameValue[],
   postData?: Binary,
   isNavigationRequest: boolean,
+  harComparator: HarComparator,
 };
 export type LocalUtilsHarLookupOptions = {
   postData?: Binary,

@@ -49,6 +49,15 @@ it('fallback:continue should continue when not found in har', async ({ context, 
   await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(255, 192, 203)');
 });
 
+
+it('should use callback to match URLs', async ({ context, server, asset }) => {
+  const path = asset('har-fulfill.har');
+  await context.routeFromHAR(path, { compare: (req1, req2) => false });
+  const page = await context.newPage();
+  await page.goto(server.PREFIX + '/one-style.html');
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(255, 192, 203)');
+});
+
 it('by default should abort requests not found in har', async ({ context, server, asset }) => {
   const path = asset('har-fulfill.har');
   await context.routeFromHAR(path);

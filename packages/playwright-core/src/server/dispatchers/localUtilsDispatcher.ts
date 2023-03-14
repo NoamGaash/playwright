@@ -341,7 +341,7 @@ class HarBackend {
   }
 }
 
-type harComparator = (
+export type harComparator = (
   harEntryCandidate: {url: string, method: string, headers: HeadersArray, postData: Buffer | undefined},
   request: {url: string, method: string, headers: HeadersArray, postData: Buffer | undefined}
 ) => number;

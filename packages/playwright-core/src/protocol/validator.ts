@@ -239,6 +239,7 @@ scheme.LocalUtilsHarLookupParams = tObject({
   headers: tArray(tType('NameValue')),
   postData: tOptional(tBinary),
   isNavigationRequest: tBoolean,
+  harComparator: tType('HarComparator'),
 });
 scheme.LocalUtilsHarLookupResult = tObject({
   action: tEnum(['error', 'redirect', 'fulfill', 'noentry']),
