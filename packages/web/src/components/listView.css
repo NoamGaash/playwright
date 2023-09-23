@@ -42,6 +42,10 @@
   z-index: 10;
 }
 
+.list-view-indent {
+  min-width: 16px;
+}
+
 .list-view-content:focus .list-view-entry.selected {
   background-color: var(--vscode-list-activeSelectionBackground);
   color: var(--vscode-list-activeSelectionForeground);
@@ -54,6 +58,7 @@
 
 .list-view-content:focus .list-view-entry.selected * {
   color: var(--vscode-list-activeSelectionForeground) !important;
+  background-color: transparent !important;
 }
 
 .list-view-content:focus .list-view-entry.error.selected {

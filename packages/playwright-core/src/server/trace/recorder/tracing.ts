@@ -58,7 +58,7 @@ type RecordingState = {
   traceFile: string,
   tracesDir: string,
   resourcesDir: string,
-  filesCount: number,
+  chunkOrdinal: number,
   networkSha1s: Set<string>,
   traceSha1s: Set<string>,
   recording: boolean;
@@ -71,7 +71,6 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
   private _snapshotter?: Snapshotter;
   private _harTracer: HarTracer;
   private _screencastListeners: RegisteredListener[] = [];
-  private _pendingCalls = new Map<string, { sdkObject: SdkObject, metadata: CallMetadata, beforeSnapshot: Promise<void>, actionSnapshot?: Promise<void>, afterSnapshot?: Promise<void> }>();
   private _context: BrowserContext | APIRequestContext;
   private _state: RecordingState | undefined;
   private _isStopping = false;
@@ -123,15 +122,17 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
 
     if (this._state) {
       const o = this._state.options;
-      if (o.name !== options.name || !o.screenshots !== !options.screenshots || !o.snapshots !== !options.snapshots)
+      if (!o.screenshots !== !options.screenshots || !o.snapshots !== !options.snapshots)
         throw new Error('Tracing has been already started with different options');
+      if (options.name && options.name !== this._state.traceName)
+        await this._changeTraceName(this._state, options.name);
       return;
     }
     // TODO: passing the same name for two contexts makes them write into a single file
     // and conflict.
     const traceName = options.name || createGuid();
-    // Init the state synchrounously.
-    this._state = { options, traceName, traceFile: '', networkFile: '', tracesDir: '', resourcesDir: '', filesCount: 0, traceSha1s: new Set(), networkSha1s: new Set(), recording: false };
+    // Init the state synchronously.
+    this._state = { options, traceName, traceFile: '', networkFile: '', tracesDir: '', resourcesDir: '', chunkOrdinal: 0, traceSha1s: new Set(), networkSha1s: new Set(), recording: false };
     const state = this._state;
 
     state.tracesDir = await this._createTracesDirIfNeeded();
@@ -143,7 +144,7 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
       this._harTracer.start();
   }
 
-  async startChunk(options: { title?: string } = {}) {
+  async startChunk(options: { name?: string, title?: string } = {}): Promise<{ traceName: string }> {
     if (this._state && this._state.recording)
       await this.stopChunk({ mode: 'discard' });
 
@@ -153,10 +154,13 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
       throw new Error('Cannot start a trace chunk while stopping');
 
     const state = this._state;
-    const suffix = state.filesCount ? `-${state.filesCount}` : ``;
-    state.filesCount++;
+    const suffix = state.chunkOrdinal ? `-${state.chunkOrdinal}` : ``;
+    state.chunkOrdinal++;
     state.traceFile = path.join(state.tracesDir, `${state.traceName}${suffix}.trace`);
     state.recording = true;
+
+    if (options.name && options.name !== this._state.traceName)
+      this._changeTraceName(this._state, options.name);
 
     this._appendTraceOperation(async () => {
       await mkdirIfNeeded(state.traceFile);
@@ -168,6 +172,7 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
       this._startScreencast();
     if (state.options.snapshots)
       await this._snapshotter?.start();
+    return { traceName: state.traceName };
   }
 
   private _startScreencast() {
@@ -186,6 +191,17 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
       return;
     for (const page of this._context.pages())
       page.setScreencastOptions(null);
+  }
+
+  private async _changeTraceName(state: RecordingState, name: string) {
+    await this._appendTraceOperation(async () => {
+      const oldNetworkFile = state.networkFile;
+      state.traceName = name;
+      state.traceFile = path.join(state.tracesDir, name + '.trace');
+      state.networkFile = path.join(state.tracesDir, name + '.network');
+      // Network file survives across chunks, so make a copy with the new name.
+      await fs.promises.copyFile(oldNetworkFile, state.networkFile);
+    });
   }
 
   async stop() {
@@ -218,7 +234,7 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
     await this._writeChain;
   }
 
-  async stopChunk(params: TracingTracingStopChunkParams): Promise<{ artifact?: Artifact, entries?: NameValue[], sourceEntries?: NameValue[] }> {
+  async stopChunk(params: TracingTracingStopChunkParams): Promise<{ artifact?: Artifact, entries?: NameValue[] }> {
     if (this._isStopping)
       throw new Error(`Tracing is already stopping`);
     this._isStopping = true;
@@ -227,26 +243,13 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
       this._isStopping = false;
       if (params.mode !== 'discard')
         throw new Error(`Must start tracing before stopping`);
-      return { sourceEntries: [] };
+      return {};
     }
 
     const state = this._state!;
     this._context.instrumentation.removeListener(this);
     if (this._state?.options.screenshots)
       this._stopScreencast();
-
-    for (const { sdkObject, metadata, beforeSnapshot, actionSnapshot, afterSnapshot } of this._pendingCalls.values()) {
-      await Promise.all([beforeSnapshot, actionSnapshot, afterSnapshot]);
-      let callMetadata = metadata;
-      if (!afterSnapshot) {
-        // Note: we should not modify metadata here to avoid side-effects in any other place.
-        callMetadata = {
-          ...metadata,
-          error: { error: { name: 'Error', message: 'Action was interrupted' } },
-        };
-      }
-      await this.onAfterCall(sdkObject, callMetadata);
-    }
 
     if (state.options.snapshots)
       await this._snapshotter?.stop();
@@ -257,8 +260,13 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
       if (params.mode === 'discard')
         return {};
 
-      // Har files are live, make a snapshot before returning the resulting entries.
-      const networkFile = path.join(state.networkFile, '..', createGuid());
+      // Network file survives across chunks, make a snapshot before returning the resulting entries.
+      // We should pick a name starting with "traceName" and ending with .network.
+      // Something like <traceName>someSuffixHere.network.
+      // However, this name must not clash with any other "traceName".network in the same tracesDir.
+      // We can use <traceName>-<guid>.network, but "-pwnetcopy-0" suffix is more readable
+      // and makes it easier to debug future issues.
+      const networkFile = path.join(state.tracesDir, state.traceName + `-pwnetcopy-${state.chunkOrdinal}.network`);
       await fs.promises.copyFile(state.networkFile, networkFile);
 
       const entries: NameValue[] = [];
@@ -270,7 +278,7 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
       if (params.mode === 'entries')
         return { entries };
       const artifact = await this._exportZip(entries, state).catch(() => undefined);
-      return { artifact, entries };
+      return { artifact };
     }).finally(() => {
       // Only reset trace sha1s, network resources are preserved between chunks.
       state.traceSha1s = new Set();
@@ -295,7 +303,7 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
     return result;
   }
 
-  async _captureSnapshot(name: 'before' | 'after' | 'action' | 'event', sdkObject: SdkObject, metadata: CallMetadata, element?: ElementHandle) {
+  async _captureSnapshot(snapshotName: string, sdkObject: SdkObject, metadata: CallMetadata, element?: ElementHandle): Promise<void> {
     if (!this._snapshotter)
       return;
     if (!sdkObject.attribution.page)
@@ -304,47 +312,43 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
       return;
     if (!shouldCaptureSnapshot(metadata))
       return;
-    const snapshotName = `${name}@${metadata.id}`;
-    metadata.snapshots.push({ title: name, snapshotName });
     // We have |element| for input actions (page.click and handle.click)
     // and |sdkObject| element for accessors like handle.textContent.
     if (!element && sdkObject instanceof ElementHandle)
       element = sdkObject;
-    await this._snapshotter.captureSnapshot(sdkObject.attribution.page, snapshotName, element).catch(() => {});
+    await this._snapshotter.captureSnapshot(sdkObject.attribution.page, metadata.id, snapshotName, element).catch(() => {});
   }
 
-  async onBeforeCall(sdkObject: SdkObject, metadata: CallMetadata) {
+  onBeforeCall(sdkObject: SdkObject, metadata: CallMetadata) {
+    // IMPORTANT: no awaits before this._appendTraceEvent in this method.
+    const event = createBeforeActionTraceEvent(metadata);
+    if (!event)
+      return Promise.resolve();
     sdkObject.attribution.page?.temporarlyDisableTracingScreencastThrottling();
-    // Set afterSnapshot name for all the actions that operate selectors.
-    // Elements resolved from selectors will be marked on the snapshot.
-    metadata.afterSnapshot = `after@${metadata.id}`;
-    const beforeSnapshot = this._captureSnapshot('before', sdkObject, metadata);
-    this._pendingCalls.set(metadata.id, { sdkObject, metadata, beforeSnapshot });
-    await beforeSnapshot;
+    event.beforeSnapshot = `before@${metadata.id}`;
+    this._appendTraceEvent(event);
+    return this._captureSnapshot(event.beforeSnapshot, sdkObject, metadata);
   }
 
-  async onBeforeInputAction(sdkObject: SdkObject, metadata: CallMetadata, element: ElementHandle) {
+  onBeforeInputAction(sdkObject: SdkObject, metadata: CallMetadata, element: ElementHandle) {
+    // IMPORTANT: no awaits before this._appendTraceEvent in this method.
+    const event = createInputActionTraceEvent(metadata);
+    if (!event)
+      return Promise.resolve();
     sdkObject.attribution.page?.temporarlyDisableTracingScreencastThrottling();
-    const actionSnapshot = this._captureSnapshot('action', sdkObject, metadata, element);
-    this._pendingCalls.get(metadata.id)!.actionSnapshot = actionSnapshot;
-    await actionSnapshot;
+    event.inputSnapshot = `input@${metadata.id}`;
+    this._appendTraceEvent(event);
+    return this._captureSnapshot(event.inputSnapshot, sdkObject, metadata, element);
   }
 
   async onAfterCall(sdkObject: SdkObject, metadata: CallMetadata) {
+    const event = createAfterActionTraceEvent(metadata);
+    if (!event)
+      return Promise.resolve();
     sdkObject.attribution.page?.temporarlyDisableTracingScreencastThrottling();
-    const pendingCall = this._pendingCalls.get(metadata.id);
-    if (!pendingCall || pendingCall.afterSnapshot)
-      return;
-    if (!sdkObject.attribution.context) {
-      this._pendingCalls.delete(metadata.id);
-      return;
-    }
-    pendingCall.afterSnapshot = this._captureSnapshot('after', sdkObject, metadata);
-    await pendingCall.afterSnapshot;
-    const event = createActionTraceEvent(metadata);
-    if (event)
-      this._appendTraceEvent(event);
-    this._pendingCalls.delete(metadata.id);
+    event.afterSnapshot = `after@${metadata.id}`;
+    this._appendTraceEvent(event);
+    return this._captureSnapshot(event.afterSnapshot, sdkObject, metadata);
   }
 
   onEvent(sdkObject: SdkObject, event: trace.EventTraceEvent) {
@@ -421,14 +425,10 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
     this._allResources.add(sha1);
     const resourcePath = path.join(this._state!.resourcesDir, sha1);
     this._appendTraceOperation(async () => {
-      try {
-        // Perhaps we've already written this resource?
-        await fs.promises.access(resourcePath);
-      } catch (e) {
-        // If not, let's write! Note that async access is safe because we
-        // never remove resources until the very end.
-        await fs.promises.writeFile(resourcePath, buffer).catch(() => {});
-      }
+      // Note: 'wx' flag only writes when the file does not exist.
+      // See https://nodejs.org/api/fs.html#file-system-flags.
+      // This way tracing never have to write the same resource twice.
+      await fs.promises.writeFile(resourcePath, buffer, { flag: 'wx' }).catch(() => {});
     });
   }
 
@@ -478,24 +478,41 @@ export function shouldCaptureSnapshot(metadata: CallMetadata): boolean {
   return commandsWithTracingSnapshots.has(metadata.type + '.' + metadata.method);
 }
 
-function createActionTraceEvent(metadata: CallMetadata): trace.ActionTraceEvent | null {
+function createBeforeActionTraceEvent(metadata: CallMetadata): trace.BeforeActionTraceEvent | null {
   if (metadata.internal || metadata.method.startsWith('tracing'))
     return null;
   return {
-    type: 'action',
+    type: 'before',
     callId: metadata.id,
     startTime: metadata.startTime,
-    endTime: metadata.endTime,
     apiName: metadata.apiName || metadata.type + '.' + metadata.method,
     class: metadata.type,
     method: metadata.method,
     params: metadata.params,
-    wallTime: metadata.wallTime || Date.now(),
+    wallTime: metadata.wallTime,
+    pageId: metadata.pageId,
+  };
+}
+
+function createInputActionTraceEvent(metadata: CallMetadata): trace.InputActionTraceEvent | null {
+  if (metadata.internal || metadata.method.startsWith('tracing'))
+    return null;
+  return {
+    type: 'input',
+    callId: metadata.id,
+    point: metadata.point,
+  };
+}
+
+function createAfterActionTraceEvent(metadata: CallMetadata): trace.AfterActionTraceEvent | null {
+  if (metadata.internal || metadata.method.startsWith('tracing'))
+    return null;
+  return {
+    type: 'after',
+    callId: metadata.id,
+    endTime: metadata.endTime,
     log: metadata.log,
-    snapshots: metadata.snapshots,
     error: metadata.error?.error,
     result: metadata.result,
-    point: metadata.point,
-    pageId: metadata.pageId,
   };
 }

@@ -611,6 +611,10 @@ export interface Page {
   waitForFunction<R>(pageFunction: PageFunction<void, R>, arg?: any, options?: PageWaitForFunctionOptions): Promise<SmartHandle<R>>;
 
   /**
+   * **NOTE** Use web assertions that assert visibility or a locator-based
+   * [locator.waitFor([options])](https://playwright.dev/docs/api/class-locator#locator-wait-for) instead. Read more
+   * about [locators](https://playwright.dev/docs/locators).
+   *
    * Returns when element specified by selector satisfies `state` option. Returns `null` if waiting for `hidden` or
    * `detached`.
    *
@@ -645,6 +649,10 @@ export interface Page {
    */
   waitForSelector<K extends keyof HTMLElementTagNameMap>(selector: K, options?: PageWaitForSelectorOptionsNotHidden): Promise<ElementHandleForTag<K>>;
   /**
+   * **NOTE** Use web assertions that assert visibility or a locator-based
+   * [locator.waitFor([options])](https://playwright.dev/docs/api/class-locator#locator-wait-for) instead. Read more
+   * about [locators](https://playwright.dev/docs/locators).
+   *
    * Returns when element specified by selector satisfies `state` option. Returns `null` if waiting for `hidden` or
    * `detached`.
    *
@@ -679,6 +687,10 @@ export interface Page {
    */
   waitForSelector(selector: string, options?: PageWaitForSelectorOptionsNotHidden): Promise<ElementHandle<SVGElement | HTMLElement>>;
   /**
+   * **NOTE** Use web assertions that assert visibility or a locator-based
+   * [locator.waitFor([options])](https://playwright.dev/docs/api/class-locator#locator-wait-for) instead. Read more
+   * about [locators](https://playwright.dev/docs/locators).
+   *
    * Returns when element specified by selector satisfies `state` option. Returns `null` if waiting for `hidden` or
    * `detached`.
    *
@@ -713,6 +725,10 @@ export interface Page {
    */
   waitForSelector<K extends keyof HTMLElementTagNameMap>(selector: K, options: PageWaitForSelectorOptions): Promise<ElementHandleForTag<K> | null>;
   /**
+   * **NOTE** Use web assertions that assert visibility or a locator-based
+   * [locator.waitFor([options])](https://playwright.dev/docs/api/class-locator#locator-wait-for) instead. Read more
+   * about [locators](https://playwright.dev/docs/locators).
+   *
    * Returns when element specified by selector satisfies `state` option. Returns `null` if waiting for `hidden` or
    * `detached`.
    *
@@ -1857,8 +1873,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -1941,8 +1957,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -2051,8 +2067,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -2114,8 +2130,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -2183,8 +2199,8 @@ export interface Page {
     };
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -2344,8 +2360,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -2370,8 +2386,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -2447,8 +2463,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -2482,18 +2498,21 @@ export interface Page {
   }): Locator;
 
   /**
-   * Allows locating input elements by the text of the associated label.
+   * Allows locating input elements by the text of the associated `<label>` or `aria-labelledby` element, or by the
+   * `aria-label` attribute.
    *
    * **Usage**
    *
-   * For example, this method will find the input by label text "Password" in the following DOM:
+   * For example, this method will find inputs by label "Username" and "Password" in the following DOM:
    *
    * ```html
+   * <input aria-label="Username">
    * <label for="password-input">Password:</label>
    * <input id="password-input">
    * ```
    *
    * ```js
+   * await page.getByLabel('Username').fill('john');
    * await page.getByLabel('Password').fill('secret');
    * ```
    *
@@ -2769,8 +2788,8 @@ export interface Page {
    */
   goBack(options?: {
     /**
-     * Maximum operation time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can
-     * be changed by using the
+     * Maximum operation time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via
+     * `navigationTimeout` option in the config, or by using the
      * [browserContext.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-navigation-timeout),
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout),
      * [page.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-navigation-timeout)
@@ -2782,8 +2801,8 @@ export interface Page {
      * When to consider operation succeeded, defaults to `load`. Events can be either:
      * - `'domcontentloaded'` - consider operation to be finished when the `DOMContentLoaded` event is fired.
      * - `'load'` - consider operation to be finished when the `load` event is fired.
-     * - `'networkidle'` - consider operation to be finished when there are no network connections for at least `500`
-     *   ms.
+     * - `'networkidle'` - **DISCOURAGED** consider operation to be finished when there are no network connections for
+     *   at least `500` ms. Don't use this method for testing, rely on web assertions to assess readiness instead.
      * - `'commit'` - consider operation to be finished when network response is received and the document started
      *   loading.
      */
@@ -2799,8 +2818,8 @@ export interface Page {
    */
   goForward(options?: {
     /**
-     * Maximum operation time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can
-     * be changed by using the
+     * Maximum operation time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via
+     * `navigationTimeout` option in the config, or by using the
      * [browserContext.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-navigation-timeout),
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout),
      * [page.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-navigation-timeout)
@@ -2812,8 +2831,8 @@ export interface Page {
      * When to consider operation succeeded, defaults to `load`. Events can be either:
      * - `'domcontentloaded'` - consider operation to be finished when the `DOMContentLoaded` event is fired.
      * - `'load'` - consider operation to be finished when the `load` event is fired.
-     * - `'networkidle'` - consider operation to be finished when there are no network connections for at least `500`
-     *   ms.
+     * - `'networkidle'` - **DISCOURAGED** consider operation to be finished when there are no network connections for
+     *   at least `500` ms. Don't use this method for testing, rely on web assertions to assess readiness instead.
      * - `'commit'` - consider operation to be finished when network response is received and the document started
      *   loading.
      */
@@ -2853,8 +2872,8 @@ export interface Page {
     referer?: string;
 
     /**
-     * Maximum operation time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can
-     * be changed by using the
+     * Maximum operation time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via
+     * `navigationTimeout` option in the config, or by using the
      * [browserContext.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-navigation-timeout),
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout),
      * [page.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-navigation-timeout)
@@ -2866,8 +2885,8 @@ export interface Page {
      * When to consider operation succeeded, defaults to `load`. Events can be either:
      * - `'domcontentloaded'` - consider operation to be finished when the `DOMContentLoaded` event is fired.
      * - `'load'` - consider operation to be finished when the `load` event is fired.
-     * - `'networkidle'` - consider operation to be finished when there are no network connections for at least `500`
-     *   ms.
+     * - `'networkidle'` - **DISCOURAGED** consider operation to be finished when there are no network connections for
+     *   at least `500` ms. Don't use this method for testing, rely on web assertions to assess readiness instead.
      * - `'commit'` - consider operation to be finished when network response is received and the document started
      *   loading.
      */
@@ -2929,8 +2948,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -2960,8 +2979,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -2985,8 +3004,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -3015,8 +3034,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -3040,8 +3059,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -3071,8 +3090,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -3097,8 +3116,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -3122,8 +3141,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -3197,6 +3216,20 @@ export interface Page {
      * Note that outer and inner locators must belong to the same frame. Inner locator must not contain [FrameLocator]s.
      */
     has?: Locator;
+
+    /**
+     * Matches elements that do not contain an element that matches an inner locator. Inner locator is queried against the
+     * outer one. For example, `article` that does not have `div` matches `<article><span>Playwright</span></article>`.
+     *
+     * Note that outer and inner locators must belong to the same frame. Inner locator must not contain [FrameLocator]s.
+     */
+    hasNot?: Locator;
+
+    /**
+     * Matches elements that do not contain specified text somewhere inside, possibly in a child or a descendant element.
+     * When passed a [string], matching is case-insensitive and searches for a substring.
+     */
+    hasNotText?: string|RegExp;
 
     /**
      * Matches elements containing specified text somewhere inside, possibly in a child or a descendant element. When
@@ -3441,8 +3474,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -3457,8 +3490,8 @@ export interface Page {
    */
   reload(options?: {
     /**
-     * Maximum operation time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can
-     * be changed by using the
+     * Maximum operation time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via
+     * `navigationTimeout` option in the config, or by using the
      * [browserContext.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-navigation-timeout),
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout),
      * [page.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-navigation-timeout)
@@ -3470,8 +3503,8 @@ export interface Page {
      * When to consider operation succeeded, defaults to `load`. Events can be either:
      * - `'domcontentloaded'` - consider operation to be finished when the `DOMContentLoaded` event is fired.
      * - `'load'` - consider operation to be finished when the `load` event is fired.
-     * - `'networkidle'` - consider operation to be finished when there are no network connections for at least `500`
-     *   ms.
+     * - `'networkidle'` - **DISCOURAGED** consider operation to be finished when there are no network connections for
+     *   at least `500` ms. Don't use this method for testing, rely on web assertions to assess readiness instead.
      * - `'commit'` - consider operation to be finished when network response is received and the document started
      *   loading.
      */
@@ -3556,10 +3589,6 @@ export interface Page {
    * @param options
    */
   routeFromHAR(har: string, options?: {
-    content?: "omit"|"embed"|"attach";
-
-    mode?: "full"|"minimal";
-
     /**
      * - If set to 'abort' any request not found in the HAR file will be aborted.
      * - If set to 'fallback' missing requests will be sent to the network.
@@ -3574,6 +3603,18 @@ export interface Page {
      * [browserContext.close()](https://playwright.dev/docs/api/class-browsercontext#browser-context-close) is called.
      */
     update?: boolean;
+
+    /**
+     * Optional setting to control resource content management. If `attach` is specified, resources are persisted as
+     * separate files or entries in the ZIP archive. If `embed` is specified, content is stored inline the HAR file.
+     */
+    updateContent?: "embed"|"attach";
+
+    /**
+     * When set to `minimal`, only record information necessary for routing from HAR. This omits sizes, timing, page,
+     * cookies, security and other types of HAR information that are not used when replaying from HAR. Defaults to `full`.
+     */
+    updateMode?: "full"|"minimal";
 
     /**
      * A glob pattern, regular expression or predicate to match the request URL. Only requests with URL matching the
@@ -3676,8 +3717,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -3738,8 +3779,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -3758,8 +3799,8 @@ export interface Page {
    */
   setContent(html: string, options?: {
     /**
-     * Maximum operation time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can
-     * be changed by using the
+     * Maximum operation time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via
+     * `navigationTimeout` option in the config, or by using the
      * [browserContext.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-navigation-timeout),
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout),
      * [page.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-navigation-timeout)
@@ -3771,8 +3812,8 @@ export interface Page {
      * When to consider operation succeeded, defaults to `load`. Events can be either:
      * - `'domcontentloaded'` - consider operation to be finished when the `DOMContentLoaded` event is fired.
      * - `'load'` - consider operation to be finished when the `load` event is fired.
-     * - `'networkidle'` - consider operation to be finished when there are no network connections for at least `500`
-     *   ms.
+     * - `'networkidle'` - **DISCOURAGED** consider operation to be finished when there are no network connections for
+     *   at least `500` ms. Don't use this method for testing, rely on web assertions to assess readiness instead.
      * - `'commit'` - consider operation to be finished when network response is received and the document started
      *   loading.
      */
@@ -3883,8 +3924,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -3987,8 +4028,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -4019,8 +4060,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -4075,8 +4116,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -4135,8 +4176,8 @@ export interface Page {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -4402,13 +4443,14 @@ export interface Page {
    * document, the method resolves immediately. Can be one of:
    * - `'load'` - wait for the `load` event to be fired.
    * - `'domcontentloaded'` - wait for the `DOMContentLoaded` event to be fired.
-   * - `'networkidle'` - wait until there are no network connections for at least `500` ms.
+   * - `'networkidle'` - **DISCOURAGED** wait until there are no network connections for at least `500` ms. Don't use
+   * this method for testing, rely on web assertions to assess readiness instead.
    * @param options
    */
   waitForLoadState(state?: "load"|"domcontentloaded"|"networkidle", options?: {
     /**
-     * Maximum operation time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can
-     * be changed by using the
+     * Maximum operation time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via
+     * `navigationTimeout` option in the config, or by using the
      * [browserContext.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-navigation-timeout),
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout),
      * [page.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-navigation-timeout)
@@ -4443,8 +4485,8 @@ export interface Page {
    */
   waitForNavigation(options?: {
     /**
-     * Maximum operation time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can
-     * be changed by using the
+     * Maximum operation time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via
+     * `navigationTimeout` option in the config, or by using the
      * [browserContext.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-navigation-timeout),
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout),
      * [page.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-navigation-timeout)
@@ -4463,8 +4505,8 @@ export interface Page {
      * When to consider operation succeeded, defaults to `load`. Events can be either:
      * - `'domcontentloaded'` - consider operation to be finished when the `DOMContentLoaded` event is fired.
      * - `'load'` - consider operation to be finished when the `load` event is fired.
-     * - `'networkidle'` - consider operation to be finished when there are no network connections for at least `500`
-     *   ms.
+     * - `'networkidle'` - **DISCOURAGED** consider operation to be finished when there are no network connections for
+     *   at least `500` ms. Don't use this method for testing, rely on web assertions to assess readiness instead.
      * - `'commit'` - consider operation to be finished when network response is received and the document started
      *   loading.
      */
@@ -4535,6 +4577,9 @@ export interface Page {
   }): Promise<Response>;
 
   /**
+   * **NOTE** Never wait for timeout in production. Tests that wait for time are inherently flaky. Use [Locator] actions and web
+   * assertions that wait automatically.
+   *
    * Waits for the given `timeout` in milliseconds.
    *
    * Note that `page.waitForTimeout()` should only be used for debugging. Tests using the timer in production are going
@@ -4568,8 +4613,8 @@ export interface Page {
    */
   waitForURL(url: string|RegExp|((url: URL) => boolean), options?: {
     /**
-     * Maximum operation time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can
-     * be changed by using the
+     * Maximum operation time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via
+     * `navigationTimeout` option in the config, or by using the
      * [browserContext.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-navigation-timeout),
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout),
      * [page.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-navigation-timeout)
@@ -4581,8 +4626,8 @@ export interface Page {
      * When to consider operation succeeded, defaults to `load`. Events can be either:
      * - `'domcontentloaded'` - consider operation to be finished when the `DOMContentLoaded` event is fired.
      * - `'load'` - consider operation to be finished when the `load` event is fired.
-     * - `'networkidle'` - consider operation to be finished when there are no network connections for at least `500`
-     *   ms.
+     * - `'networkidle'` - **DISCOURAGED** consider operation to be finished when there are no network connections for
+     *   at least `500` ms. Don't use this method for testing, rely on web assertions to assess readiness instead.
      * - `'commit'` - consider operation to be finished when network response is received and the document started
      *   loading.
      */
@@ -5179,6 +5224,10 @@ export interface Frame {
   waitForFunction<R>(pageFunction: PageFunction<void, R>, arg?: any, options?: PageWaitForFunctionOptions): Promise<SmartHandle<R>>;
 
   /**
+   * **NOTE** Use web assertions that assert visibility or a locator-based
+   * [locator.waitFor([options])](https://playwright.dev/docs/api/class-locator#locator-wait-for) instead. Read more
+   * about [locators](https://playwright.dev/docs/locators).
+   *
    * Returns when element specified by selector satisfies `state` option. Returns `null` if waiting for `hidden` or
    * `detached`.
    *
@@ -5213,6 +5262,10 @@ export interface Frame {
    */
   waitForSelector<K extends keyof HTMLElementTagNameMap>(selector: K, options?: PageWaitForSelectorOptionsNotHidden): Promise<ElementHandleForTag<K>>;
   /**
+   * **NOTE** Use web assertions that assert visibility or a locator-based
+   * [locator.waitFor([options])](https://playwright.dev/docs/api/class-locator#locator-wait-for) instead. Read more
+   * about [locators](https://playwright.dev/docs/locators).
+   *
    * Returns when element specified by selector satisfies `state` option. Returns `null` if waiting for `hidden` or
    * `detached`.
    *
@@ -5247,6 +5300,10 @@ export interface Frame {
    */
   waitForSelector(selector: string, options?: PageWaitForSelectorOptionsNotHidden): Promise<ElementHandle<SVGElement | HTMLElement>>;
   /**
+   * **NOTE** Use web assertions that assert visibility or a locator-based
+   * [locator.waitFor([options])](https://playwright.dev/docs/api/class-locator#locator-wait-for) instead. Read more
+   * about [locators](https://playwright.dev/docs/locators).
+   *
    * Returns when element specified by selector satisfies `state` option. Returns `null` if waiting for `hidden` or
    * `detached`.
    *
@@ -5281,6 +5338,10 @@ export interface Frame {
    */
   waitForSelector<K extends keyof HTMLElementTagNameMap>(selector: K, options: PageWaitForSelectorOptions): Promise<ElementHandleForTag<K> | null>;
   /**
+   * **NOTE** Use web assertions that assert visibility or a locator-based
+   * [locator.waitFor([options])](https://playwright.dev/docs/api/class-locator#locator-wait-for) instead. Read more
+   * about [locators](https://playwright.dev/docs/locators).
+   *
    * Returns when element specified by selector satisfies `state` option. Returns `null` if waiting for `hidden` or
    * `detached`.
    *
@@ -5421,8 +5482,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -5507,8 +5568,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -5594,8 +5655,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -5657,8 +5718,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -5712,8 +5773,8 @@ export interface Frame {
     };
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -5766,8 +5827,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -5792,8 +5853,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -5857,8 +5918,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -5892,18 +5953,21 @@ export interface Frame {
   }): Locator;
 
   /**
-   * Allows locating input elements by the text of the associated label.
+   * Allows locating input elements by the text of the associated `<label>` or `aria-labelledby` element, or by the
+   * `aria-label` attribute.
    *
    * **Usage**
    *
-   * For example, this method will find the input by label text "Password" in the following DOM:
+   * For example, this method will find inputs by label "Username" and "Password" in the following DOM:
    *
    * ```html
+   * <input aria-label="Username">
    * <label for="password-input">Password:</label>
    * <input id="password-input">
    * ```
    *
    * ```js
+   * await page.getByLabel('Username').fill('john');
    * await page.getByLabel('Password').fill('secret');
    * ```
    *
@@ -6201,8 +6265,8 @@ export interface Frame {
     referer?: string;
 
     /**
-     * Maximum operation time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can
-     * be changed by using the
+     * Maximum operation time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via
+     * `navigationTimeout` option in the config, or by using the
      * [browserContext.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-navigation-timeout),
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout),
      * [page.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-navigation-timeout)
@@ -6214,8 +6278,8 @@ export interface Frame {
      * When to consider operation succeeded, defaults to `load`. Events can be either:
      * - `'domcontentloaded'` - consider operation to be finished when the `DOMContentLoaded` event is fired.
      * - `'load'` - consider operation to be finished when the `load` event is fired.
-     * - `'networkidle'` - consider operation to be finished when there are no network connections for at least `500`
-     *   ms.
+     * - `'networkidle'` - **DISCOURAGED** consider operation to be finished when there are no network connections for
+     *   at least `500` ms. Don't use this method for testing, rely on web assertions to assess readiness instead.
      * - `'commit'` - consider operation to be finished when network response is received and the document started
      *   loading.
      */
@@ -6277,8 +6341,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -6308,8 +6372,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -6333,8 +6397,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -6363,8 +6427,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -6388,8 +6452,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -6419,8 +6483,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -6445,8 +6509,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -6467,8 +6531,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -6546,6 +6610,20 @@ export interface Frame {
     has?: Locator;
 
     /**
+     * Matches elements that do not contain an element that matches an inner locator. Inner locator is queried against the
+     * outer one. For example, `article` that does not have `div` matches `<article><span>Playwright</span></article>`.
+     *
+     * Note that outer and inner locators must belong to the same frame. Inner locator must not contain [FrameLocator]s.
+     */
+    hasNot?: Locator;
+
+    /**
+     * Matches elements that do not contain specified text somewhere inside, possibly in a child or a descendant element.
+     * When passed a [string], matching is case-insensitive and searches for a substring.
+     */
+    hasNotText?: string|RegExp;
+
+    /**
      * Matches elements containing specified text somewhere inside, possibly in a child or a descendant element. When
      * passed a [string], matching is case-insensitive and searches for a substring. For example, `"Playwright"` matches
      * `<article><div>Playwright</div></article>`.
@@ -6620,8 +6698,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -6714,8 +6792,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -6776,8 +6854,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -6796,8 +6874,8 @@ export interface Frame {
    */
   setContent(html: string, options?: {
     /**
-     * Maximum operation time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can
-     * be changed by using the
+     * Maximum operation time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via
+     * `navigationTimeout` option in the config, or by using the
      * [browserContext.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-navigation-timeout),
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout),
      * [page.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-navigation-timeout)
@@ -6809,8 +6887,8 @@ export interface Frame {
      * When to consider operation succeeded, defaults to `load`. Events can be either:
      * - `'domcontentloaded'` - consider operation to be finished when the `DOMContentLoaded` event is fired.
      * - `'load'` - consider operation to be finished when the `load` event is fired.
-     * - `'networkidle'` - consider operation to be finished when there are no network connections for at least `500`
-     *   ms.
+     * - `'networkidle'` - **DISCOURAGED** consider operation to be finished when there are no network connections for
+     *   at least `500` ms. Don't use this method for testing, rely on web assertions to assess readiness instead.
      * - `'commit'` - consider operation to be finished when network response is received and the document started
      *   loading.
      */
@@ -6879,8 +6957,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -6944,8 +7022,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -6976,8 +7054,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -7032,8 +7110,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -7092,8 +7170,8 @@ export interface Frame {
     strict?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -7129,13 +7207,14 @@ export interface Frame {
    * document, the method resolves immediately. Can be one of:
    * - `'load'` - wait for the `load` event to be fired.
    * - `'domcontentloaded'` - wait for the `DOMContentLoaded` event to be fired.
-   * - `'networkidle'` - wait until there are no network connections for at least `500` ms.
+   * - `'networkidle'` - **DISCOURAGED** wait until there are no network connections for at least `500` ms. Don't use
+   * this method for testing, rely on web assertions to assess readiness instead.
    * @param options
    */
   waitForLoadState(state?: "load"|"domcontentloaded"|"networkidle", options?: {
     /**
-     * Maximum operation time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can
-     * be changed by using the
+     * Maximum operation time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via
+     * `navigationTimeout` option in the config, or by using the
      * [browserContext.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-navigation-timeout),
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout),
      * [page.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-navigation-timeout)
@@ -7169,8 +7248,8 @@ export interface Frame {
    */
   waitForNavigation(options?: {
     /**
-     * Maximum operation time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can
-     * be changed by using the
+     * Maximum operation time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via
+     * `navigationTimeout` option in the config, or by using the
      * [browserContext.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-navigation-timeout),
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout),
      * [page.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-navigation-timeout)
@@ -7189,8 +7268,8 @@ export interface Frame {
      * When to consider operation succeeded, defaults to `load`. Events can be either:
      * - `'domcontentloaded'` - consider operation to be finished when the `DOMContentLoaded` event is fired.
      * - `'load'` - consider operation to be finished when the `load` event is fired.
-     * - `'networkidle'` - consider operation to be finished when there are no network connections for at least `500`
-     *   ms.
+     * - `'networkidle'` - **DISCOURAGED** consider operation to be finished when there are no network connections for
+     *   at least `500` ms. Don't use this method for testing, rely on web assertions to assess readiness instead.
      * - `'commit'` - consider operation to be finished when network response is received and the document started
      *   loading.
      */
@@ -7223,8 +7302,8 @@ export interface Frame {
    */
   waitForURL(url: string|RegExp|((url: URL) => boolean), options?: {
     /**
-     * Maximum operation time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can
-     * be changed by using the
+     * Maximum operation time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via
+     * `navigationTimeout` option in the config, or by using the
      * [browserContext.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-navigation-timeout),
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout),
      * [page.setDefaultNavigationTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-navigation-timeout)
@@ -7236,8 +7315,8 @@ export interface Frame {
      * When to consider operation succeeded, defaults to `load`. Events can be either:
      * - `'domcontentloaded'` - consider operation to be finished when the `DOMContentLoaded` event is fired.
      * - `'load'` - consider operation to be finished when the `load` event is fired.
-     * - `'networkidle'` - consider operation to be finished when there are no network connections for at least `500`
-     *   ms.
+     * - `'networkidle'` - **DISCOURAGED** consider operation to be finished when there are no network connections for
+     *   at least `500` ms. Don't use this method for testing, rely on web assertions to assess readiness instead.
      * - `'commit'` - consider operation to be finished when network response is received and the document started
      *   loading.
      */
@@ -8064,20 +8143,6 @@ export interface BrowserContext {
    */
   routeFromHAR(har: string, options?: {
     /**
-     * Optional setting to control resource content management. If `omit` is specified, content is not persisted. If
-     * `attach` is specified, resources are persisted as separate files or entries in the ZIP archive. If `embed` is
-     * specified, content is stored inline the HAR file
-     */
-    content?: "omit"|"embed"|"attach";
-
-    /**
-     * When set to `minimal`, only record information necessary for routing from HAR. This omits sizes, timing, page,
-     * cookies, security and other types of HAR information that are not used when replaying from HAR. Defaults to
-     * `minimal`.
-     */
-    mode?: "full"|"minimal";
-
-    /**
      * - If set to 'abort' any request not found in the HAR file will be aborted.
      * - If set to 'fallback' falls through to the next route handler in the handler chain.
      *
@@ -8091,6 +8156,19 @@ export interface BrowserContext {
      * [browserContext.close()](https://playwright.dev/docs/api/class-browsercontext#browser-context-close) is called.
      */
     update?: boolean;
+
+    /**
+     * Optional setting to control resource content management. If `attach` is specified, resources are persisted as
+     * separate files or entries in the ZIP archive. If `embed` is specified, content is stored inline the HAR file.
+     */
+    updateContent?: "embed"|"attach";
+
+    /**
+     * When set to `minimal`, only record information necessary for routing from HAR. This omits sizes, timing, page,
+     * cookies, security and other types of HAR information that are not used when replaying from HAR. Defaults to
+     * `minimal`.
+     */
+    updateMode?: "full"|"minimal";
 
     /**
      * A glob pattern, regular expression or predicate to match the request URL. Only requests with URL matching the
@@ -9080,8 +9158,8 @@ export interface ElementHandle<T=Node> extends JSHandle<T> {
     };
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -9153,8 +9231,8 @@ export interface ElementHandle<T=Node> extends JSHandle<T> {
     };
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -9229,8 +9307,8 @@ export interface ElementHandle<T=Node> extends JSHandle<T> {
     };
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -9307,8 +9385,8 @@ export interface ElementHandle<T=Node> extends JSHandle<T> {
     noWaitAfter?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -9370,8 +9448,8 @@ export interface ElementHandle<T=Node> extends JSHandle<T> {
     };
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -9404,8 +9482,8 @@ export interface ElementHandle<T=Node> extends JSHandle<T> {
    */
   inputValue(options?: {
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -9487,8 +9565,8 @@ export interface ElementHandle<T=Node> extends JSHandle<T> {
     noWaitAfter?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -9557,8 +9635,8 @@ export interface ElementHandle<T=Node> extends JSHandle<T> {
     scale?: "css"|"device";
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -9581,8 +9659,8 @@ export interface ElementHandle<T=Node> extends JSHandle<T> {
    */
   scrollIntoViewIfNeeded(options?: {
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -9664,8 +9742,8 @@ export interface ElementHandle<T=Node> extends JSHandle<T> {
     noWaitAfter?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -9688,8 +9766,8 @@ export interface ElementHandle<T=Node> extends JSHandle<T> {
     force?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -9737,8 +9815,8 @@ export interface ElementHandle<T=Node> extends JSHandle<T> {
     };
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -9801,8 +9879,8 @@ export interface ElementHandle<T=Node> extends JSHandle<T> {
     noWaitAfter?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -9855,8 +9933,8 @@ export interface ElementHandle<T=Node> extends JSHandle<T> {
     };
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -9913,8 +9991,8 @@ export interface ElementHandle<T=Node> extends JSHandle<T> {
     noWaitAfter?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -9962,8 +10040,8 @@ export interface ElementHandle<T=Node> extends JSHandle<T> {
     };
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -9997,8 +10075,8 @@ export interface ElementHandle<T=Node> extends JSHandle<T> {
    */
   waitForElementState(state: "visible"|"hidden"|"stable"|"enabled"|"disabled"|"editable", options?: {
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -10125,6 +10203,11 @@ export interface Locator {
   /**
    * When locator points to a list of elements, returns array of locators, pointing to respective elements.
    *
+   * Note that [locator.all()](https://playwright.dev/docs/api/class-locator#locator-all) does not wait for elements to
+   * match the locator, and instead immediately returns whatever is present in the page. To avoid flakiness when
+   * elements are loaded dynamically, wait for the loading to finish before calling
+   * [locator.all()](https://playwright.dev/docs/api/class-locator#locator-all).
+   *
    * **Usage**
    *
    * ```js
@@ -10165,8 +10248,8 @@ export interface Locator {
    */
   blur(options?: {
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -10201,8 +10284,8 @@ export interface Locator {
    */
   boundingBox(options?: {
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -10281,8 +10364,8 @@ export interface Locator {
     };
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -10330,8 +10413,8 @@ export interface Locator {
     noWaitAfter?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -10420,8 +10503,8 @@ export interface Locator {
     };
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -10507,8 +10590,8 @@ export interface Locator {
     };
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -10562,8 +10645,8 @@ export interface Locator {
    */
   dispatchEvent(type: string, eventInit?: EvaluationArgument, options?: {
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -10629,8 +10712,8 @@ export interface Locator {
     };
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -10679,8 +10762,8 @@ export interface Locator {
    */
   evaluateHandle(pageFunction: Function|string, arg?: EvaluationArgument, options?: {
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -10725,8 +10808,8 @@ export interface Locator {
     noWaitAfter?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -10760,6 +10843,20 @@ export interface Locator {
     has?: Locator;
 
     /**
+     * Matches elements that do not contain an element that matches an inner locator. Inner locator is queried against the
+     * outer one. For example, `article` that does not have `div` matches `<article><span>Playwright</span></article>`.
+     *
+     * Note that outer and inner locators must belong to the same frame. Inner locator must not contain [FrameLocator]s.
+     */
+    hasNot?: Locator;
+
+    /**
+     * Matches elements that do not contain specified text somewhere inside, possibly in a child or a descendant element.
+     * When passed a [string], matching is case-insensitive and searches for a substring.
+     */
+    hasNotText?: string|RegExp;
+
+    /**
      * Matches elements containing specified text somewhere inside, possibly in a child or a descendant element. When
      * passed a [string], matching is case-insensitive and searches for a substring. For example, `"Playwright"` matches
      * `<article><div>Playwright</div></article>`.
@@ -10778,8 +10875,8 @@ export interface Locator {
    */
   focus(options?: {
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -10808,8 +10905,8 @@ export interface Locator {
    */
   getAttribute(name: string, options?: {
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -10843,18 +10940,21 @@ export interface Locator {
   }): Locator;
 
   /**
-   * Allows locating input elements by the text of the associated label.
+   * Allows locating input elements by the text of the associated `<label>` or `aria-labelledby` element, or by the
+   * `aria-label` attribute.
    *
    * **Usage**
    *
-   * For example, this method will find the input by label text "Password" in the following DOM:
+   * For example, this method will find inputs by label "Username" and "Password" in the following DOM:
    *
    * ```html
+   * <input aria-label="Username">
    * <label for="password-input">Password:</label>
    * <input id="password-input">
    * ```
    *
    * ```js
+   * await page.getByLabel('Username').fill('john');
    * await page.getByLabel('Password').fill('secret');
    * ```
    *
@@ -11181,8 +11281,8 @@ export interface Locator {
     };
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -11201,8 +11301,8 @@ export interface Locator {
    */
   innerHTML(options?: {
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -11215,8 +11315,8 @@ export interface Locator {
    */
   innerText(options?: {
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -11242,8 +11342,8 @@ export interface Locator {
    */
   inputValue(options?: {
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -11263,8 +11363,8 @@ export interface Locator {
    */
   isChecked(options?: {
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -11284,8 +11384,8 @@ export interface Locator {
    */
   isDisabled(options?: {
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -11305,8 +11405,8 @@ export interface Locator {
    */
   isEditable(options?: {
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -11326,8 +11426,8 @@ export interface Locator {
    */
   isEnabled(options?: {
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -11405,6 +11505,20 @@ export interface Locator {
     has?: Locator;
 
     /**
+     * Matches elements that do not contain an element that matches an inner locator. Inner locator is queried against the
+     * outer one. For example, `article` that does not have `div` matches `<article><span>Playwright</span></article>`.
+     *
+     * Note that outer and inner locators must belong to the same frame. Inner locator must not contain [FrameLocator]s.
+     */
+    hasNot?: Locator;
+
+    /**
+     * Matches elements that do not contain specified text somewhere inside, possibly in a child or a descendant element.
+     * When passed a [string], matching is case-insensitive and searches for a substring.
+     */
+    hasNotText?: string|RegExp;
+
+    /**
      * Matches elements containing specified text somewhere inside, possibly in a child or a descendant element. When
      * passed a [string], matching is case-insensitive and searches for a substring. For example, `"Playwright"` matches
      * `<article><div>Playwright</div></article>`.
@@ -11424,6 +11538,27 @@ export interface Locator {
    * @param index
    */
   nth(index: number): Locator;
+
+  /**
+   * Creates a locator that matches either of the two locators.
+   *
+   * **Usage**
+   *
+   * Consider a scenario where you'd like to click on a "New email" button, but sometimes a security settings dialog
+   * shows up instead. In this case, you can wait for either a "New email" button, or a dialog and act accordingly.
+   *
+   * ```js
+   * const newEmail = page.getByRole('button', { name: 'New' });
+   * const dialog = page.getByText('Confirm security settings');
+   * await expect(newEmail.or(dialog)).toBeVisible();
+   * if (await dialog.isVisible())
+   *   await page.getByRole('button', { name: 'Dismiss' }).click();
+   * await newEmail.click();
+   * ```
+   *
+   * @param locator Alternative locator to match.
+   */
+  or(locator: Locator): Locator;
 
   /**
    * A page this locator belongs to.
@@ -11480,8 +11615,8 @@ export interface Locator {
     noWaitAfter?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -11525,8 +11660,8 @@ export interface Locator {
    */
   scrollIntoViewIfNeeded(options?: {
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -11620,8 +11755,8 @@ export interface Locator {
     noWaitAfter?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -11644,8 +11779,8 @@ export interface Locator {
     force?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -11703,8 +11838,8 @@ export interface Locator {
     };
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -11791,8 +11926,8 @@ export interface Locator {
     noWaitAfter?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -11849,8 +11984,8 @@ export interface Locator {
     };
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -11869,8 +12004,8 @@ export interface Locator {
    */
   textContent(options?: {
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -11916,8 +12051,8 @@ export interface Locator {
     noWaitAfter?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -11975,8 +12110,8 @@ export interface Locator {
     };
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -12017,8 +12152,8 @@ export interface Locator {
     state?: "attached"|"detached"|"visible"|"hidden";
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -12302,12 +12437,18 @@ export interface BrowserType<Unused = {}> {
     headless?: boolean;
 
     /**
-     * Credentials for [HTTP authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication).
+     * Credentials for [HTTP authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication). If no
+     * origin is specified, the username and password are sent to any servers upon unauthorized responses.
      */
     httpCredentials?: {
       username: string;
 
       password: string;
+
+      /**
+       * Restrain sending http credentials on specific origin (scheme://host:port).
+       */
+      origin?: string;
     };
 
     /**
@@ -13118,8 +13259,16 @@ export interface ElectronApplication {
    *   // ...
    * ```
    *
+   * @param options
    */
-  firstWindow(): Promise<Page>;
+  firstWindow(options?: {
+    /**
+     * Maximum time to wait for in milliseconds. Defaults to `30000` (30 seconds). Pass `0` to disable timeout. The
+     * default value can be changed by using the
+     * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout).
+     */
+    timeout?: number;
+  }): Promise<Page>;
 
   /**
    * Returns the main process for this Electron Application.
@@ -13695,12 +13844,18 @@ export interface AndroidDevice {
     hasTouch?: boolean;
 
     /**
-     * Credentials for [HTTP authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication).
+     * Credentials for [HTTP authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication). If no
+     * origin is specified, the username and password are sent to any servers upon unauthorized responses.
      */
     httpCredentials?: {
       username: string;
 
       password: string;
+
+      /**
+       * Restrain sending http credentials on specific origin (scheme://host:port).
+       */
+      origin?: string;
     };
 
     /**
@@ -14405,12 +14560,18 @@ export interface APIRequest {
     extraHTTPHeaders?: { [key: string]: string; };
 
     /**
-     * Credentials for [HTTP authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication).
+     * Credentials for [HTTP authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication). If no
+     * origin is specified, the username and password are sent to any servers upon unauthorized responses.
      */
     httpCredentials?: {
       username: string;
 
       password: string;
+
+      /**
+       * Restrain sending http credentials on specific origin (scheme://host:port).
+       */
+      origin?: string;
     };
 
     /**
@@ -15552,12 +15713,18 @@ export interface Browser extends EventEmitter {
     hasTouch?: boolean;
 
     /**
-     * Credentials for [HTTP authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication).
+     * Credentials for [HTTP authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication). If no
+     * origin is specified, the username and password are sent to any servers upon unauthorized responses.
      */
     httpCredentials?: {
       username: string;
 
       password: string;
+
+      /**
+       * Restrain sending http credentials on specific origin (scheme://host:port).
+       */
+      origin?: string;
     };
 
     /**
@@ -15979,8 +16146,8 @@ export interface BrowserServer {
  * const msg = await msgPromise;
  *
  * // Deconstruct console log arguments
- * await msg.args[0].jsonValue() // hello
- * await msg.args[1].jsonValue() // 42
+ * await msg.args()[0].jsonValue() // hello
+ * await msg.args()[1].jsonValue() // 42
  * ```
  *
  */
@@ -16413,12 +16580,18 @@ export interface Electron {
     };
 
     /**
-     * Credentials for [HTTP authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication).
+     * Credentials for [HTTP authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication). If no
+     * origin is specified, the username and password are sent to any servers upon unauthorized responses.
      */
     httpCredentials?: {
       username: string;
 
       password: string;
+
+      /**
+       * Restrain sending http credentials on specific origin (scheme://host:port).
+       */
+      origin?: string;
     };
 
     /**
@@ -16597,8 +16770,8 @@ export interface FileChooser {
     noWaitAfter?: boolean;
 
     /**
-     * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-     * by using the
+     * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+     * option in the config, or by using the
      * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
      * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
      */
@@ -16680,18 +16853,21 @@ export interface FrameLocator {
   }): Locator;
 
   /**
-   * Allows locating input elements by the text of the associated label.
+   * Allows locating input elements by the text of the associated `<label>` or `aria-labelledby` element, or by the
+   * `aria-label` attribute.
    *
    * **Usage**
    *
-   * For example, this method will find the input by label text "Password" in the following DOM:
+   * For example, this method will find inputs by label "Username" and "Password" in the following DOM:
    *
    * ```html
+   * <input aria-label="Username">
    * <label for="password-input">Password:</label>
    * <input id="password-input">
    * ```
    *
    * ```js
+   * await page.getByLabel('Username').fill('john');
    * await page.getByLabel('Password').fill('secret');
    * ```
    *
@@ -16980,6 +17156,20 @@ export interface FrameLocator {
      * Note that outer and inner locators must belong to the same frame. Inner locator must not contain [FrameLocator]s.
      */
     has?: Locator;
+
+    /**
+     * Matches elements that do not contain an element that matches an inner locator. Inner locator is queried against the
+     * outer one. For example, `article` that does not have `div` matches `<article><span>Playwright</span></article>`.
+     *
+     * Note that outer and inner locators must belong to the same frame. Inner locator must not contain [FrameLocator]s.
+     */
+    hasNot?: Locator;
+
+    /**
+     * Matches elements that do not contain specified text somewhere inside, possibly in a child or a descendant element.
+     * When passed a [string], matching is case-insensitive and searches for a substring.
+     */
+    hasNotText?: string|RegExp;
 
     /**
      * Matches elements containing specified text somewhere inside, possibly in a child or a descendant element. When
@@ -17611,8 +17801,8 @@ export interface Request {
     requestStart: number;
 
     /**
-     * Time immediately after the browser starts requesting the resource from the server, cache, or local resource. The
-     * value is given in milliseconds relative to `startTime`, -1 if not available.
+     * Time immediately after the browser receives the first byte of the response from the server, cache, or local
+     * resource. The value is given in milliseconds relative to `startTime`, -1 if not available.
      */
     responseStart: number;
 
@@ -18258,6 +18448,13 @@ export interface Tracing {
    */
   startChunk(options?: {
     /**
+     * If specified, the trace is going to be saved into the file with the given name inside the `tracesDir` folder
+     * specified in
+     * [browserType.launch([options])](https://playwright.dev/docs/api/class-browsertype#browser-type-launch).
+     */
+    name?: string;
+
+    /**
      * Trace name to be shown in the Trace Viewer.
      */
     title?: string;
@@ -18350,7 +18547,7 @@ export interface WebSocket {
   /**
    * Fired when the websocket has an error.
    */
-  on(event: 'socketerror', listener: (string: String) => void): this;
+  on(event: 'socketerror', listener: (string: string) => void): this;
 
   /**
    * Adds an event listener that will be automatically removed after it is triggered once. See `addListener` for more information about this event.
@@ -18380,7 +18577,7 @@ export interface WebSocket {
   /**
    * Adds an event listener that will be automatically removed after it is triggered once. See `addListener` for more information about this event.
    */
-  once(event: 'socketerror', listener: (string: String) => void): this;
+  once(event: 'socketerror', listener: (string: string) => void): this;
 
   /**
    * Fired when the websocket closes.
@@ -18410,7 +18607,7 @@ export interface WebSocket {
   /**
    * Fired when the websocket has an error.
    */
-  addListener(event: 'socketerror', listener: (string: String) => void): this;
+  addListener(event: 'socketerror', listener: (string: string) => void): this;
 
   /**
    * Removes an event listener added by `on` or `addListener`.
@@ -18440,7 +18637,7 @@ export interface WebSocket {
   /**
    * Removes an event listener added by `on` or `addListener`.
    */
-  removeListener(event: 'socketerror', listener: (string: String) => void): this;
+  removeListener(event: 'socketerror', listener: (string: string) => void): this;
 
   /**
    * Removes an event listener added by `on` or `addListener`.
@@ -18470,7 +18667,7 @@ export interface WebSocket {
   /**
    * Removes an event listener added by `on` or `addListener`.
    */
-  off(event: 'socketerror', listener: (string: String) => void): this;
+  off(event: 'socketerror', listener: (string: string) => void): this;
 
   /**
    * Fired when the websocket closes.
@@ -18500,7 +18697,7 @@ export interface WebSocket {
   /**
    * Fired when the websocket has an error.
    */
-  prependListener(event: 'socketerror', listener: (string: String) => void): this;
+  prependListener(event: 'socketerror', listener: (string: string) => void): this;
 
   /**
    * Indicates that the web socket has been closed.
@@ -18560,7 +18757,7 @@ export interface WebSocket {
   /**
    * Fired when the websocket has an error.
    */
-  waitForEvent(event: 'socketerror', optionsOrPredicate?: { predicate?: (string: String) => boolean | Promise<boolean>, timeout?: number } | ((string: String) => boolean | Promise<boolean>)): Promise<String>;
+  waitForEvent(event: 'socketerror', optionsOrPredicate?: { predicate?: (string: string) => boolean | Promise<boolean>, timeout?: number } | ((string: string) => boolean | Promise<boolean>)): Promise<string>;
 
 }
 
@@ -18625,7 +18822,8 @@ export interface BrowserContextOptions {
   hasTouch?: boolean;
 
   /**
-   * Credentials for [HTTP authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication).
+   * Credentials for [HTTP authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication). If no
+   * origin is specified, the username and password are sent to any servers upon unauthorized responses.
    */
   httpCredentials?: HTTPCredentials;
 
@@ -18920,6 +19118,11 @@ export interface HTTPCredentials {
   username: string;
 
   password: string;
+
+  /**
+   * Restrain sending http credentials on specific origin (scheme://host:port).
+   */
+  origin?: string;
 }
 
 export interface Geolocation {
@@ -19182,8 +19385,8 @@ export interface LocatorScreenshotOptions {
   scale?: "css"|"device";
 
   /**
-   * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-   * by using the
+   * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+   * option in the config, or by using the
    * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
    * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
    */
@@ -19214,8 +19417,8 @@ interface ElementHandleWaitForSelectorOptions {
   strict?: boolean;
 
   /**
-   * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-   * by using the
+   * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+   * option in the config, or by using the
    * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
    * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
    */
@@ -19262,8 +19465,8 @@ interface PageWaitForSelectorOptions {
   strict?: boolean;
 
   /**
-   * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-   * by using the
+   * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+   * option in the config, or by using the
    * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
    * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
    */
@@ -19279,9 +19482,10 @@ interface PageWaitForFunctionOptions {
   polling?: number|"raf";
 
   /**
-   * maximum time to wait for in milliseconds. Defaults to `30000` (30 seconds). Pass `0` to disable timeout. The
-   * default value can be changed by using the
-   * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout).
+   * Maximum time to wait for in milliseconds. Defaults to `0` - no timeout. The default value can be changed via
+   * `actionTimeout` option in the config, or by using the
+   * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
+   * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
    */
   timeout?: number;
 }
@@ -19368,8 +19572,8 @@ export interface PageScreenshotOptions {
   scale?: "css"|"device";
 
   /**
-   * Maximum time in milliseconds, defaults to 30 seconds, pass `0` to disable timeout. The default value can be changed
-   * by using the
+   * Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+   * option in the config, or by using the
    * [browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
    * or [page.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-page#page-set-default-timeout) methods.
    */

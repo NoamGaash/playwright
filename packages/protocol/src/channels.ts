@@ -402,16 +402,19 @@ export interface LocalUtilsChannel extends LocalUtilsEventTarget, Channel {
   harClose(params: LocalUtilsHarCloseParams, metadata?: CallMetadata): Promise<LocalUtilsHarCloseResult>;
   harUnzip(params: LocalUtilsHarUnzipParams, metadata?: CallMetadata): Promise<LocalUtilsHarUnzipResult>;
   connect(params: LocalUtilsConnectParams, metadata?: CallMetadata): Promise<LocalUtilsConnectResult>;
+  tracingStarted(params: LocalUtilsTracingStartedParams, metadata?: CallMetadata): Promise<LocalUtilsTracingStartedResult>;
+  addStackToTracingNoReply(params: LocalUtilsAddStackToTracingNoReplyParams, metadata?: CallMetadata): Promise<LocalUtilsAddStackToTracingNoReplyResult>;
+  traceDiscarded(params: LocalUtilsTraceDiscardedParams, metadata?: CallMetadata): Promise<LocalUtilsTraceDiscardedResult>;
 }
 export type LocalUtilsZipParams = {
   zipFile: string,
   entries: NameValue[],
+  stacksId?: string,
   mode: 'write' | 'append',
-  metadata: ClientSideCallMetadata[],
   includeSources: boolean,
 };
 export type LocalUtilsZipOptions = {
-
+  stacksId?: string,
 };
 export type LocalUtilsZipResult = void;
 export type LocalUtilsHarOpenParams = {
@@ -476,7 +479,32 @@ export type LocalUtilsConnectOptions = {
 };
 export type LocalUtilsConnectResult = {
   pipe: JsonPipeChannel,
+  headers: NameValue[],
 };
+export type LocalUtilsTracingStartedParams = {
+  tracesDir?: string,
+  traceName: string,
+};
+export type LocalUtilsTracingStartedOptions = {
+  tracesDir?: string,
+};
+export type LocalUtilsTracingStartedResult = {
+  stacksId: string,
+};
+export type LocalUtilsAddStackToTracingNoReplyParams = {
+  callData: ClientSideCallMetadata,
+};
+export type LocalUtilsAddStackToTracingNoReplyOptions = {
+
+};
+export type LocalUtilsAddStackToTracingNoReplyResult = void;
+export type LocalUtilsTraceDiscardedParams = {
+  stacksId: string,
+};
+export type LocalUtilsTraceDiscardedOptions = {
+
+};
+export type LocalUtilsTraceDiscardedResult = void;
 
 export interface LocalUtilsEvents {
 }
@@ -547,6 +575,7 @@ export type PlaywrightNewRequestParams = {
   httpCredentials?: {
     username: string,
     password: string,
+    origin?: string,
   },
   proxy?: {
     server: string,
@@ -569,6 +598,7 @@ export type PlaywrightNewRequestOptions = {
   httpCredentials?: {
     username: string,
     password: string,
+    origin?: string,
   },
   proxy?: {
     server: string,
@@ -927,6 +957,7 @@ export type BrowserTypeLaunchPersistentContextParams = {
   httpCredentials?: {
     username: string,
     password: string,
+    origin?: string,
   },
   deviceScaleFactor?: number,
   isMobile?: boolean,
@@ -997,6 +1028,7 @@ export type BrowserTypeLaunchPersistentContextOptions = {
   httpCredentials?: {
     username: string,
     password: string,
+    origin?: string,
   },
   deviceScaleFactor?: number,
   isMobile?: boolean,
@@ -1052,6 +1084,7 @@ export interface BrowserChannel extends BrowserEventTarget, Channel {
   _type_Browser: boolean;
   close(params?: BrowserCloseParams, metadata?: CallMetadata): Promise<BrowserCloseResult>;
   killForTests(params?: BrowserKillForTestsParams, metadata?: CallMetadata): Promise<BrowserKillForTestsResult>;
+  defaultUserAgentForTest(params?: BrowserDefaultUserAgentForTestParams, metadata?: CallMetadata): Promise<BrowserDefaultUserAgentForTestResult>;
   newContext(params: BrowserNewContextParams, metadata?: CallMetadata): Promise<BrowserNewContextResult>;
   newContextForReuse(params: BrowserNewContextForReuseParams, metadata?: CallMetadata): Promise<BrowserNewContextForReuseResult>;
   newBrowserCDPSession(params?: BrowserNewBrowserCDPSessionParams, metadata?: CallMetadata): Promise<BrowserNewBrowserCDPSessionResult>;
@@ -1065,6 +1098,11 @@ export type BrowserCloseResult = void;
 export type BrowserKillForTestsParams = {};
 export type BrowserKillForTestsOptions = {};
 export type BrowserKillForTestsResult = void;
+export type BrowserDefaultUserAgentForTestParams = {};
+export type BrowserDefaultUserAgentForTestOptions = {};
+export type BrowserDefaultUserAgentForTestResult = {
+  userAgent: string,
+};
 export type BrowserNewContextParams = {
   noDefaultViewport?: boolean,
   viewport?: {
@@ -1092,6 +1130,7 @@ export type BrowserNewContextParams = {
   httpCredentials?: {
     username: string,
     password: string,
+    origin?: string,
   },
   deviceScaleFactor?: number,
   isMobile?: boolean,
@@ -1149,6 +1188,7 @@ export type BrowserNewContextOptions = {
   httpCredentials?: {
     username: string,
     password: string,
+    origin?: string,
   },
   deviceScaleFactor?: number,
   isMobile?: boolean,
@@ -1209,6 +1249,7 @@ export type BrowserNewContextForReuseParams = {
   httpCredentials?: {
     username: string,
     password: string,
+    origin?: string,
   },
   deviceScaleFactor?: number,
   isMobile?: boolean,
@@ -1266,6 +1307,7 @@ export type BrowserNewContextForReuseOptions = {
   httpCredentials?: {
     username: string,
     password: string,
+    origin?: string,
   },
   deviceScaleFactor?: number,
   isMobile?: boolean,
@@ -1530,12 +1572,14 @@ export type BrowserContextSetHTTPCredentialsParams = {
   httpCredentials?: {
     username: string,
     password: string,
+    origin?: string,
   },
 };
 export type BrowserContextSetHTTPCredentialsOptions = {
   httpCredentials?: {
     username: string,
     password: string,
+    origin?: string,
   },
 };
 export type BrowserContextSetHTTPCredentialsResult = void;
@@ -2939,6 +2983,7 @@ export interface JSHandleChannel extends JSHandleEventTarget, Channel {
   getPropertyList(params?: JSHandleGetPropertyListParams, metadata?: CallMetadata): Promise<JSHandleGetPropertyListResult>;
   getProperty(params: JSHandleGetPropertyParams, metadata?: CallMetadata): Promise<JSHandleGetPropertyResult>;
   jsonValue(params?: JSHandleJsonValueParams, metadata?: CallMetadata): Promise<JSHandleJsonValueResult>;
+  objectCount(params?: JSHandleObjectCountParams, metadata?: CallMetadata): Promise<JSHandleObjectCountResult>;
 }
 export type JSHandlePreviewUpdatedEvent = {
   preview: string,
@@ -2989,6 +3034,11 @@ export type JSHandleJsonValueParams = {};
 export type JSHandleJsonValueOptions = {};
 export type JSHandleJsonValueResult = {
   value: SerializedValue,
+};
+export type JSHandleObjectCountParams = {};
+export type JSHandleObjectCountOptions = {};
+export type JSHandleObjectCountResult = {
+  count: number,
 };
 
 export interface JSHandleEvents {
@@ -3493,6 +3543,7 @@ export type RouteRedirectNavigationRequestOptions = {
 export type RouteRedirectNavigationRequestResult = void;
 export type RouteAbortParams = {
   errorCode?: string,
+  requestUrl: string,
 };
 export type RouteAbortOptions = {
   errorCode?: string,
@@ -3503,6 +3554,7 @@ export type RouteContinueParams = {
   method?: string,
   headers?: NameValue[],
   postData?: Binary,
+  requestUrl: string,
 };
 export type RouteContinueOptions = {
   url?: string,
@@ -3517,6 +3569,7 @@ export type RouteFulfillParams = {
   body?: string,
   isBase64?: boolean,
   fetchResponseUid?: string,
+  requestUrl: string,
 };
 export type RouteFulfillOptions = {
   status?: number,
@@ -3750,12 +3803,16 @@ export type TracingTracingStartOptions = {
 };
 export type TracingTracingStartResult = void;
 export type TracingTracingStartChunkParams = {
+  name?: string,
   title?: string,
 };
 export type TracingTracingStartChunkOptions = {
+  name?: string,
   title?: string,
 };
-export type TracingTracingStartChunkResult = void;
+export type TracingTracingStartChunkResult = {
+  traceName: string,
+};
 export type TracingTracingStopChunkParams = {
   mode: 'archive' | 'discard' | 'entries',
 };
@@ -3932,6 +3989,7 @@ export type ElectronLaunchParams = {
   httpCredentials?: {
     username: string,
     password: string,
+    origin?: string,
   },
   ignoreHTTPSErrors?: boolean,
   locale?: string,
@@ -3965,6 +4023,7 @@ export type ElectronLaunchOptions = {
   httpCredentials?: {
     username: string,
     password: string,
+    origin?: string,
   },
   ignoreHTTPSErrors?: boolean,
   locale?: string,
@@ -4334,6 +4393,7 @@ export type AndroidDeviceLaunchBrowserParams = {
   httpCredentials?: {
     username: string,
     password: string,
+    origin?: string,
   },
   deviceScaleFactor?: number,
   isMobile?: boolean,
@@ -4389,6 +4449,7 @@ export type AndroidDeviceLaunchBrowserOptions = {
   httpCredentials?: {
     username: string,
     password: string,
+    origin?: string,
   },
   deviceScaleFactor?: number,
   isMobile?: boolean,

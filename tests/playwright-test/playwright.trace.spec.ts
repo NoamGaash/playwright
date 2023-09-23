@@ -18,6 +18,8 @@ import { test, expect } from './playwright-test-fixtures';
 import { parseTrace } from '../config/utils';
 import fs from 'fs';
 
+test.describe.configure({ mode: 'parallel' });
+
 test('should stop tracing with trace: on-first-retry, when not retrying', async ({ runInlineTest }, testInfo) => {
   const result = await runInlineTest({
     'playwright.config.ts': `
@@ -128,6 +130,42 @@ test('should not throw with trace: on-first-retry and two retries in the same wo
   expect(result.exitCode).toBe(0);
   expect(result.passed).toBe(6);
   expect(result.flaky).toBe(6);
+});
+
+test('should not mixup network files between contexts', async ({ runInlineTest, server }, testInfo) => {
+  // NOTE: this test reproduces the issue 10% of the time. Running with --repeat-each=20 helps.
+  test.info().annotations.push({ type: 'issue', description: 'https://github.com/microsoft/playwright/issues/22089' });
+
+  const result = await runInlineTest({
+    'playwright.config.ts': `
+      export default { use: { trace: 'on' } };
+    `,
+    'a.spec.ts': `
+      import { test, expect } from '@playwright/test';
+
+      let page1, page2;
+
+      test.beforeAll(async ({ browser }) => {
+        page1 = await browser.newPage();
+        await page1.goto("${server.EMPTY_PAGE}");
+
+        page2 = await browser.newPage();
+        await page2.goto("${server.EMPTY_PAGE}");
+      });
+
+      test.afterAll(async () => {
+        await page1.close();
+        await page2.close();
+      });
+
+      test('example', async ({ page }) => {
+        await page.goto("${server.EMPTY_PAGE}");
+      });
+    `,
+  }, { workers: 1, timeout: 15000 });
+  expect(result.exitCode).toEqual(0);
+  expect(result.passed).toBe(1);
+  expect(fs.existsSync(testInfo.outputPath('test-results', 'a-example', 'trace.zip'))).toBe(true);
 });
 
 test('should save sources when requested', async ({ runInlineTest }, testInfo) => {
@@ -284,3 +322,73 @@ test('should respect --trace', async ({ runInlineTest }, testInfo) => {
   expect(result.passed).toBe(1);
   expect(fs.existsSync(testInfo.outputPath('test-results', 'a-test-1', 'trace.zip'))).toBeTruthy();
 });
+
+test('should respect PW_TEST_DISABLE_TRACING', async ({ runInlineTest }, testInfo) => {
+  const result = await runInlineTest({
+    'playwright.config.ts': `
+      export default { use: { trace: 'on' } };
+    `,
+    'a.spec.ts': `
+      import { test, expect } from '@playwright/test';
+      test('test 1', async ({ page }) => {
+        await page.goto('about:blank');
+      });
+    `,
+  }, {}, { PW_TEST_DISABLE_TRACING: '1' });
+
+  expect(result.exitCode).toBe(0);
+  expect(result.passed).toBe(1);
+  expect(fs.existsSync(testInfo.outputPath('test-results', 'a-test-1', 'trace.zip'))).toBe(false);
+});
+
+for (const mode of ['off', 'retain-on-failure', 'on-first-retry', 'on-all-retries']) {
+  test(`trace:${mode} should not create trace zip artifact if page test passed`, async ({ runInlineTest }) => {
+    const result = await runInlineTest({
+      'a.spec.ts': `
+        import { test as base, expect } from '@playwright/test';
+        import fs from 'fs';
+        const test = base.extend<{
+          locale: string | undefined,
+          _artifactsDir: () => string,
+        }>({
+          // Override locale fixture to check in teardown that no temporary trace zip was created.
+          locale: [async ({ locale, _artifactsDir }, use) => {
+            await use(locale);
+            const entries =  fs.readdirSync(_artifactsDir());
+            expect(entries.filter(e => e.endsWith('.zip'))).toEqual([]);
+          }, { option: true }],
+        });
+        test('passing test', async ({ page }) => {
+          await page.goto('about:blank');
+        });
+      `,
+    }, { trace: 'retain-on-failure' });
+    expect(result.exitCode).toBe(0);
+    expect(result.passed).toBe(1);
+  });
+
+  test(`trace:${mode} should not create trace zip artifact if APIRequestContext test passed`, async ({ runInlineTest, server }) => {
+    const result = await runInlineTest({
+      'a.spec.ts': `
+        import { test as base, expect } from '@playwright/test';
+        import fs from 'fs';
+        const test = base.extend<{
+          locale: string | undefined,
+          _artifactsDir: () => string,
+        }>({
+          // Override locale fixture to check in teardown that no temporary trace zip was created.
+          locale: [async ({ locale, _artifactsDir }, use) => {
+            await use(locale);
+            const entries =  fs.readdirSync(_artifactsDir());
+            expect(entries.filter(e => e.endsWith('.zip'))).toEqual([]);
+          }, { option: true }],
+        });
+        test('passing test', async ({ request }) => {
+          expect(await request.get('${server.EMPTY_PAGE}')).toBeOK();
+        });
+      `,
+    }, { trace: 'retain-on-failure' });
+    expect(result.exitCode).toBe(0);
+    expect(result.passed).toBe(1);
+  });
+}

@@ -220,8 +220,8 @@ scheme.LocalUtilsInitializer = tOptional(tObject({}));
 scheme.LocalUtilsZipParams = tObject({
   zipFile: tString,
   entries: tArray(tType('NameValue')),
+  stacksId: tOptional(tString),
   mode: tEnum(['write', 'append']),
-  metadata: tArray(tType('ClientSideCallMetadata')),
   includeSources: tBoolean,
 });
 scheme.LocalUtilsZipResult = tOptional(tObject({}));
@@ -268,7 +268,23 @@ scheme.LocalUtilsConnectParams = tObject({
 });
 scheme.LocalUtilsConnectResult = tObject({
   pipe: tChannel(['JsonPipe']),
+  headers: tArray(tType('NameValue')),
 });
+scheme.LocalUtilsTracingStartedParams = tObject({
+  tracesDir: tOptional(tString),
+  traceName: tString,
+});
+scheme.LocalUtilsTracingStartedResult = tObject({
+  stacksId: tString,
+});
+scheme.LocalUtilsAddStackToTracingNoReplyParams = tObject({
+  callData: tType('ClientSideCallMetadata'),
+});
+scheme.LocalUtilsAddStackToTracingNoReplyResult = tOptional(tObject({}));
+scheme.LocalUtilsTraceDiscardedParams = tObject({
+  stacksId: tString,
+});
+scheme.LocalUtilsTraceDiscardedResult = tOptional(tObject({}));
 scheme.RootInitializer = tOptional(tObject({}));
 scheme.RootInitializeParams = tObject({
   sdkLanguage: tEnum(['javascript', 'python', 'java', 'csharp']),
@@ -314,6 +330,7 @@ scheme.PlaywrightNewRequestParams = tObject({
   httpCredentials: tOptional(tObject({
     username: tString,
     password: tString,
+    origin: tOptional(tString),
   })),
   proxy: tOptional(tObject({
     server: tString,
@@ -529,6 +546,7 @@ scheme.BrowserTypeLaunchPersistentContextParams = tObject({
   httpCredentials: tOptional(tObject({
     username: tString,
     password: tString,
+    origin: tOptional(tString),
   })),
   deviceScaleFactor: tOptional(tNumber),
   isMobile: tOptional(tBoolean),
@@ -573,6 +591,10 @@ scheme.BrowserCloseParams = tOptional(tObject({}));
 scheme.BrowserCloseResult = tOptional(tObject({}));
 scheme.BrowserKillForTestsParams = tOptional(tObject({}));
 scheme.BrowserKillForTestsResult = tOptional(tObject({}));
+scheme.BrowserDefaultUserAgentForTestParams = tOptional(tObject({}));
+scheme.BrowserDefaultUserAgentForTestResult = tObject({
+  userAgent: tString,
+});
 scheme.BrowserNewContextParams = tObject({
   noDefaultViewport: tOptional(tBoolean),
   viewport: tOptional(tObject({
@@ -600,6 +622,7 @@ scheme.BrowserNewContextParams = tObject({
   httpCredentials: tOptional(tObject({
     username: tString,
     password: tString,
+    origin: tOptional(tString),
   })),
   deviceScaleFactor: tOptional(tNumber),
   isMobile: tOptional(tBoolean),
@@ -660,6 +683,7 @@ scheme.BrowserNewContextForReuseParams = tObject({
   httpCredentials: tOptional(tObject({
     username: tString,
     password: tString,
+    origin: tOptional(tString),
   })),
   deviceScaleFactor: tOptional(tNumber),
   isMobile: tOptional(tBoolean),
@@ -831,6 +855,7 @@ scheme.BrowserContextSetHTTPCredentialsParams = tObject({
   httpCredentials: tOptional(tObject({
     username: tString,
     password: tString,
+    origin: tOptional(tString),
   })),
 });
 scheme.BrowserContextSetHTTPCredentialsResult = tOptional(tObject({}));
@@ -1683,6 +1708,12 @@ scheme.JSHandleJsonValueResult = tObject({
   value: tType('SerializedValue'),
 });
 scheme.ElementHandleJsonValueResult = tType('JSHandleJsonValueResult');
+scheme.JSHandleObjectCountParams = tOptional(tObject({}));
+scheme.ElementHandleObjectCountParams = tType('JSHandleObjectCountParams');
+scheme.JSHandleObjectCountResult = tObject({
+  count: tNumber,
+});
+scheme.ElementHandleObjectCountResult = tType('JSHandleObjectCountResult');
 scheme.ElementHandleInitializer = tObject({
   preview: tString,
 });
@@ -1960,6 +1991,7 @@ scheme.RouteRedirectNavigationRequestParams = tObject({
 scheme.RouteRedirectNavigationRequestResult = tOptional(tObject({}));
 scheme.RouteAbortParams = tObject({
   errorCode: tOptional(tString),
+  requestUrl: tString,
 });
 scheme.RouteAbortResult = tOptional(tObject({}));
 scheme.RouteContinueParams = tObject({
@@ -1967,6 +1999,7 @@ scheme.RouteContinueParams = tObject({
   method: tOptional(tString),
   headers: tOptional(tArray(tType('NameValue'))),
   postData: tOptional(tBinary),
+  requestUrl: tString,
 });
 scheme.RouteContinueResult = tOptional(tObject({}));
 scheme.RouteFulfillParams = tObject({
@@ -1975,6 +2008,7 @@ scheme.RouteFulfillParams = tObject({
   body: tOptional(tString),
   isBase64: tOptional(tBoolean),
   fetchResponseUid: tOptional(tString),
+  requestUrl: tString,
 });
 scheme.RouteFulfillResult = tOptional(tObject({}));
 scheme.ResourceTiming = tObject({
@@ -2093,9 +2127,12 @@ scheme.TracingTracingStartParams = tObject({
 });
 scheme.TracingTracingStartResult = tOptional(tObject({}));
 scheme.TracingTracingStartChunkParams = tObject({
+  name: tOptional(tString),
   title: tOptional(tString),
 });
-scheme.TracingTracingStartChunkResult = tOptional(tObject({}));
+scheme.TracingTracingStartChunkResult = tObject({
+  traceName: tString,
+});
 scheme.TracingTracingStopChunkParams = tObject({
   mode: tEnum(['archive', 'discard', 'entries']),
 });
@@ -2181,6 +2218,7 @@ scheme.ElectronLaunchParams = tObject({
   httpCredentials: tOptional(tObject({
     username: tString,
     password: tString,
+    origin: tOptional(tString),
   })),
   ignoreHTTPSErrors: tOptional(tBoolean),
   locale: tOptional(tString),
@@ -2389,6 +2427,7 @@ scheme.AndroidDeviceLaunchBrowserParams = tObject({
   httpCredentials: tOptional(tObject({
     username: tString,
     password: tString,
+    origin: tOptional(tString),
   })),
   deviceScaleFactor: tOptional(tNumber),
   isMobile: tOptional(tBoolean),

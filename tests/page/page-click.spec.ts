@@ -38,22 +38,6 @@ it('should click button inside frameset', async ({ page, server }) => {
   expect(await frame.evaluate('result')).toBe('Clicked');
 });
 
-it('should click a button that closes popup', async ({ page }) => {
-  it.info().annotations.push({ type: 'issue', description: 'https://github.com/microsoft/playwright/issues/20093' });
-  const [popup] = await Promise.all([
-    page.waitForEvent('popup'),
-    page.evaluate(() => window.open('')),
-  ]);
-  await popup.setContent(`<button>clickme</button>`);
-  await popup.$eval('button', body => body.addEventListener('click', () => {
-    window.close();
-  }));
-  await Promise.all([
-    popup.locator('button').click(), // throws in Firefox, but not in Chromium or WebKit
-    popup.waitForEvent('close'),
-  ]);
-});
-
 it('should issue clicks in parallel in page and popup', async ({ page, server }) => {
   await page.goto(server.PREFIX + '/counter.html');
   const [popup] = await Promise.all([
@@ -159,7 +143,9 @@ it('should select the text by triple clicking', async ({ page, server }) => {
   })).toBe(text);
 });
 
-it('should click offscreen buttons', async ({ page, server }) => {
+it('should click offscreen buttons', async ({ page, server, browserName, headless }) => {
+  it.fixme(!headless && browserName === 'firefox' && process.platform === 'darwin', 'https://github.com/microsoft/playwright/issues/20993');
+
   await page.goto(server.PREFIX + '/offscreenbuttons.html');
   const messages = [];
   page.on('console', msg => messages.push(msg.text()));

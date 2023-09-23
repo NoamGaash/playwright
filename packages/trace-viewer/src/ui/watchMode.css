@@ -37,28 +37,124 @@
 .watch-mode-list-item-title {
   flex: auto;
   text-overflow: ellipsis;
-  overflow: hidden
+  overflow: hidden;
 }
 
-.watch-mode-sidebar .toolbar-button {
-  margin: 0;
+.watch-mode-list-item-time {
+  flex: none;
+  color: var(--vscode-editorCodeLens-foreground);
+  margin: 0 4px;
+  user-select: none;
 }
 
-.watch-mode-sidebar .section-title {
+.list-view-entry.selected .watch-mode-list-item-time,
+.list-view-entry.highlighted .watch-mode-list-item-time {
+  display: none;
+}
+
+.watch-mode .section-title {
+  display: flex;
+  flex: auto;
+  flex-direction: row;
+  align-items: center;
   font-size: 11px;
   text-transform: uppercase;
   font-weight: bold;
-  margin: 5px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  padding: 8px;
+  height: 30px;
+}
+
+.watch-mode-sidebar img {
+  flex: none;
+  margin-left: 6px;
+  width: 24px;
+  height: 24px;
 }
 
 .status-line {
-  flex: none;
+  flex: auto;
+  white-space: nowrap;
   line-height: 22px;
-  padding: 0 10px;
-  color: var(--vscode-statusBar-foreground);
-  background-color: var(--vscode-statusBar-background);
+  padding-left: 10px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 30px;
 }
 
-.list-view-entry:not(.selected):not(.highlighted) .toolbar-button {
+.status-line > div {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list-view-entry:not(.highlighted):not(.selected) .toolbar-button:not(.toggled) {
   display: none;
+}
+
+.watch-mode-sidebar input[type=search] {
+  flex: auto;
+  padding: 0 5px;
+  line-height: 24px;
+  outline: none;
+  margin: 0 4px;
+  border: none;
+  color: var(--vscode-input-foreground);
+  background-color: var(--vscode-input-background);
+}
+
+.filters {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  margin: 2px 0;
+}
+
+.filter-list {
+  padding: 0 10px 10px 10px;
+}
+
+.filter-title,
+.filter-summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: none;
+  cursor: pointer;
+}
+
+.filter-label {
+  color: var(--vscode-disabledForeground);
+}
+
+.filter-summary {
+  line-height: 24px;
+  margin-left: 24px;
+}
+
+.filter-summary .filter-label {
+  margin-left: 5px;
+}
+
+.filter-entry {
+  line-height: 24px;
+}
+
+.filter-entry label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.filter-entry input {
+  flex: none;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.filter-entry label div {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

@@ -17,10 +17,8 @@
 import type { Locator, Page, APIResponse } from 'playwright-core';
 import type { FrameExpectOptions } from 'playwright-core/lib/client/types';
 import { colors } from 'playwright-core/lib/utilsBundle';
-import type { Expect } from '../common/types';
+import type { Expect } from '../../types/test';
 import { expectTypes, callLogText } from '../util';
-import { currentTestInfo } from '../common/globals';
-import type { TestInfoErrorState } from '../worker/testInfo';
 import { toBeTruthy } from './toBeTruthy';
 import { toEqual } from './toEqual';
 import { toExpectedTextValues, toMatchText } from './toMatchText';
@@ -32,6 +30,17 @@ interface LocatorEx extends Locator {
 
 interface APIResponseEx extends APIResponse {
   _fetchLog(): Promise<string[]>;
+}
+
+export function toBeAttached(
+  this: ReturnType<Expect['getState']>,
+  locator: LocatorEx,
+  options?: { attached?: boolean, timeout?: number },
+) {
+  return toBeTruthy.call(this, 'toBeAttached', locator, 'Locator', async (isNot, timeout) => {
+    const attached = !options || options.attached === undefined || options.attached === true;
+    return await locator._expect(attached ? 'to.be.attached' : 'to.be.detached', { isNot, timeout });
+  }, options);
 }
 
 export function toBeChecked(
@@ -328,22 +337,11 @@ export async function toPass(
     timeout?: number,
   } = {},
 ) {
-  const testInfo = currentTestInfo();
-
   const timeout = options.timeout !== undefined ? options.timeout : 0;
 
-  // Soft expects might mark test as failing.
-  // We want to revert this later if the matcher is actually passing.
-  // See https://github.com/microsoft/playwright/issues/20437
-  let testStateBeforeToPassMatcher: undefined|TestInfoErrorState;
   const result = await pollAgainstTimeout<Error|undefined>(async () => {
     try {
-      if (testStateBeforeToPassMatcher && testInfo)
-        testInfo._restoreErrorState(testStateBeforeToPassMatcher);
-      testStateBeforeToPassMatcher = testInfo?._saveErrorState();
       await callback();
-      if (testInfo && testStateBeforeToPassMatcher && testInfo.errors.length > testStateBeforeToPassMatcher.errors.length)
-        return { continuePolling: !this.isNot, result: testInfo.errors[testInfo.errors.length - 1] };
       return { continuePolling: this.isNot, result: undefined };
     } catch (e) {
       return { continuePolling: !this.isNot, result: e };
@@ -361,7 +359,5 @@ export async function toPass(
 
     return { message, pass: this.isNot };
   }
-  if (testStateBeforeToPassMatcher && testInfo)
-    testInfo._restoreErrorState(testStateBeforeToPassMatcher);
   return { pass: !this.isNot, message: () => '' };
 }

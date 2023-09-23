@@ -570,7 +570,8 @@ export class WKPage implements PageDelegate {
         const objectId = JSON.parse(p.objectId);
         context = this._contextIdToContext.get(objectId.injectedScriptId);
       } else {
-        context = this._contextIdToContext.get(this._mainFrameContextId!);
+        // Pick any context if the parameter is a value.
+        context = [...this._contextIdToContext.values()].find(c => c.frame === this._page.mainFrame());
       }
       if (!context)
         return;
@@ -731,8 +732,8 @@ export class WKPage implements PageDelegate {
   }
 
   async updateHttpCredentials() {
-    const credentials = this._browserContext._options.httpCredentials || { username: '', password: '' };
-    await this._pageProxySession.send('Emulation.setAuthCredentials', { username: credentials.username, password: credentials.password });
+    const credentials = this._browserContext._options.httpCredentials || { username: '', password: '', origin: '' };
+    await this._pageProxySession.send('Emulation.setAuthCredentials', { username: credentials.username, password: credentials.password, origin: credentials.origin });
   }
 
   async updateFileChooserInterception() {

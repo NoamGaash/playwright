@@ -197,11 +197,6 @@ type ConnectOptions = {
   timeout?: number;
 };
 
-export interface TestStore {
-  get<T>(path: string): Promise<T | undefined>;
-  set<T>(path: string, value: T | undefined): Promise<void>;
-}
-
 export interface PlaywrightWorkerOptions {
   browserName: BrowserName;
   defaultBrowserType: BrowserName;
@@ -215,7 +210,7 @@ export interface PlaywrightWorkerOptions {
 }
 
 export type ScreenshotMode = 'off' | 'on' | 'only-on-failure';
-export type TraceMode = 'off' | 'on' | 'retain-on-failure' | 'on-first-retry';
+export type TraceMode = 'off' | 'on' | 'retain-on-failure' | 'on-first-retry' | 'on-all-retries';
 export type VideoMode = 'off' | 'on' | 'retain-on-failure' | 'on-first-retry';
 
 export interface PlaywrightTestOptions {
@@ -376,7 +371,6 @@ export default test;
 
 export const _baseTest: TestType<{}, {}>;
 export const expect: Expect;
-export const store: TestStore;
 
 /**
  * Defines Playwright config

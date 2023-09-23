@@ -8,6 +8,9 @@ on:
     branches:
       - release-*
 
+env:
+  ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+
 jobs:
   publish-canary:
     name: "publish canary NPM & Publish canary Docker"
@@ -58,7 +61,7 @@ jobs:
         username: playwright
         password: ${{ secrets.DOCKER_PASSWORD }}
     - name: Set up Docker QEMU for arm64 docker builds
-      uses: docker/setup-qemu-action@v1
+      uses: docker/setup-qemu-action@v2
       with:
         platforms: arm64
     - name: publish docker canary

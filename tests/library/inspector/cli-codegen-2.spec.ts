@@ -104,7 +104,8 @@ test.describe('cli codegen', () => {
     expect(errors.length).toBe(0);
   });
 
-  test('should upload a single file', async ({ page, openRecorder, browserName, asset }) => {
+  test('should upload a single file', async ({ page, openRecorder, browserName, asset, isLinux }) => {
+    test.fixme(browserName === 'firefox' && isLinux, 'https://bugzilla.mozilla.org/show_bug.cgi?id=1827551');
     const recorder = await openRecorder();
     await recorder.setContentAndWait(`
     <form>
@@ -134,7 +135,8 @@ test.describe('cli codegen', () => {
         await page.GetByRole(AriaRole.Textbox).SetInputFilesAsync(new[] { \"file-to-upload.txt\" });`);
   });
 
-  test('should upload multiple files', async ({ page, openRecorder, browserName, asset }) => {
+  test('should upload multiple files', async ({ page, openRecorder, browserName, asset, isLinux }) => {
+    test.fixme(browserName === 'firefox' && isLinux, 'https://bugzilla.mozilla.org/show_bug.cgi?id=1827551');
     const recorder = await openRecorder();
     await recorder.setContentAndWait(`
     <form>
@@ -164,7 +166,8 @@ test.describe('cli codegen', () => {
         await page.GetByRole(AriaRole.Textbox).SetInputFilesAsync(new[] { \"file-to-upload.txt\", \"file-to-upload-2.txt\" });`);
   });
 
-  test('should clear files', async ({ page, openRecorder, browserName, asset }) => {
+  test('should clear files', async ({ page, openRecorder, browserName, asset, isLinux }) => {
+    test.fixme(browserName === 'firefox' && isLinux, 'https://bugzilla.mozilla.org/show_bug.cgi?id=1827551');
     const recorder = await openRecorder();
     await recorder.setContentAndWait(`
     <form>
@@ -478,8 +481,10 @@ test.describe('cli codegen', () => {
 
   test('should --save-trace', async ({ runCLI }, testInfo) => {
     const traceFileName = testInfo.outputPath('trace.zip');
-    const cli = runCLI([`--save-trace=${traceFileName}`]);
-    await cli.exited;
+    const cli = runCLI([`--save-trace=${traceFileName}`], {
+      autoExitWhen: ' ',
+    });
+    await cli.waitForCleanExit();
     expect(fs.existsSync(traceFileName)).toBeTruthy();
   });
 
@@ -489,11 +494,9 @@ test.describe('cli codegen', () => {
     const traceFileName = testInfo.outputPath('trace.zip');
     const storageFileName = testInfo.outputPath('auth.json');
     const harFileName = testInfo.outputPath('har.har');
-    const cli = runCLI([`--save-trace=${traceFileName}`, `--save-storage=${storageFileName}`, `--save-har=${harFileName}`], {
-      noAutoExit: true,
-    });
+    const cli = runCLI([`--save-trace=${traceFileName}`, `--save-storage=${storageFileName}`, `--save-har=${harFileName}`]);
     await cli.waitFor(`import { test, expect } from '@playwright/test'`);
-    cli.exit('SIGINT');
+    cli.process.kill('SIGINT');
     const { exitCode } = await cli.process.exited;
     expect(exitCode).toBe(130);
     expect(fs.existsSync(traceFileName)).toBeTruthy();

@@ -45,7 +45,7 @@ export class BrowserContext extends ChannelOwner<channels.BrowserContextChannel>
   _pages = new Set<Page>();
   private _routes: network.RouteHandler[] = [];
   readonly _browser: Browser | null = null;
-  private _browserType: BrowserType | undefined;
+  _browserType: BrowserType | undefined;
   readonly _bindings = new Map<string, (source: structs.BindingSource, ...args: any[]) => any>();
   _timeoutSettings = new TimeoutSettings();
   _ownerPage: Page | undefined;
@@ -72,6 +72,7 @@ export class BrowserContext extends ChannelOwner<channels.BrowserContextChannel>
     super(parent, type, guid, initializer, createInstrumentation());
     if (parent instanceof Browser)
       this._browser = parent;
+    this._browser?._contexts.add(this);
     this._isChromium = this._browser?._name === 'chromium';
     this.tracing = Tracing.from(initializer.tracing);
     this.request = APIRequestContext.from(initializer.requestContext);
@@ -105,11 +106,11 @@ export class BrowserContext extends ChannelOwner<channels.BrowserContextChannel>
     ]));
   }
 
-  _setBrowserType(browserType: BrowserType) {
-    this._browserType = browserType;
-    browserType._contexts.add(this);
+  _setOptions(contextOptions: channels.BrowserNewContextParams, browserOptions: LaunchOptions) {
+    this._options = contextOptions;
     if (this._options.recordHar)
       this._harRecorders.set('', { path: this._options.recordHar.path, content: this._options.recordHar.content });
+    this.tracing._tracesDir = browserOptions.tracesDir;
   }
 
   private _onPage(page: Page): void {
@@ -265,20 +266,20 @@ export class BrowserContext extends ChannelOwner<channels.BrowserContextChannel>
     await this._updateInterceptionPatterns();
   }
 
-  async _recordIntoHAR(har: string, page: Page | null, options: { url?: string | RegExp, notFound?: 'abort' | 'fallback', update?: boolean, content?: 'omit' | 'attach' | 'embed' | undefined, mode?: 'minimal' | 'full'} = {}): Promise<void> {
+  async _recordIntoHAR(har: string, page: Page | null, options: { url?: string | RegExp, notFound?: 'abort' | 'fallback', update?: boolean, updateContent?: 'attach' | 'embed', updateMode?: 'minimal' | 'full'} = {}): Promise<void> {
     const { harId } = await this._channel.harStart({
       page: page?._channel,
       options: prepareRecordHarOptions({
         path: har,
-        content: options.content ?? 'attach',
-        mode: options.mode ?? 'minimal',
+        content: options.updateContent ?? 'attach',
+        mode: options.updateMode ?? 'minimal',
         urlFilter: options.url
       })!
     });
-    this._harRecorders.set(harId, { path: har, content: options.content ?? 'attach' });
+    this._harRecorders.set(harId, { path: har, content: options.updateContent ?? 'attach' });
   }
 
-  async routeFromHAR(har: string, options: { url?: string | RegExp, notFound?: 'abort' | 'fallback', update?: boolean, content?: 'omit' | 'attach' | 'embed' | undefined, mode?: 'minimal' | 'full' } = {}): Promise<void> {
+  async routeFromHAR(har: string, options: { url?: string | RegExp, notFound?: 'abort' | 'fallback', update?: boolean, updateContent?: 'attach' | 'embed', updateMode?: 'minimal' | 'full' } = {}): Promise<void> {
     if (options.update) {
       await this._recordIntoHAR(har, null, options);
       return;
@@ -348,7 +349,7 @@ export class BrowserContext extends ChannelOwner<channels.BrowserContextChannel>
       return;
     this._closeWasCalled = true;
     await this._wrapApiCall(async () => {
-      await this._browserType?._onWillCloseContext?.(this);
+      await this._browserType?._willCloseContext(this);
       for (const [harId, harParams] of this._harRecorders) {
         const har = await this._channel.harExport({ harId });
         const artifact = Artifact.from(har.artifact);

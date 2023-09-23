@@ -107,7 +107,7 @@ it('should play audio @smoke', async ({ page, server, browserName, platform }) =
   expect(await page.$eval('audio', e => e.currentTime)).toBeGreaterThan(0.2);
 });
 
-it('should support webgl @smoke', async ({ page, browserName, headless }) => {
+it('should support webgl @smoke', async ({ page, browserName, headless, browserMajorVersion, channel }) => {
   const hasWebGL = await page.evaluate(() => {
     const canvas = document.createElement('canvas');
     return !!canvas.getContext('webgl');
@@ -115,7 +115,7 @@ it('should support webgl @smoke', async ({ page, browserName, headless }) => {
   expect(hasWebGL).toBe(true);
 });
 
-it('should support webgl 2 @smoke', async ({ page, browserName, headless, isWindows }) => {
+it('should support webgl 2 @smoke', async ({ page, browserName, headless, isWindows, channel, browserMajorVersion }) => {
   it.skip(browserName === 'webkit', 'WebKit doesn\'t have webgl2 enabled yet upstream.');
   it.fixme(browserName === 'firefox' && isWindows);
   it.fixme(browserName === 'chromium' && !headless, 'chromium doesn\'t like webgl2 when running under xvfb');
@@ -186,17 +186,23 @@ it('should set CloseEvent.wasClean to false when the server terminates a WebSock
   expect(wasClean).toBe(false);
 });
 
-it('serviceWorker should intercept document request', async ({ page, server, browserName }) => {
+it('serviceWorker should intercept document request', async ({ page, server }) => {
   server.setRoute('/sw.js', (req, res) => {
     res.setHeader('Content-Type', 'application/javascript');
     res.end(`
       self.addEventListener('fetch', event => {
         event.respondWith(new Response('intercepted'));
       });
+      self.addEventListener('activate', event => {
+        event.waitUntil(clients.claim());
+      });
     `);
   });
   await page.goto(server.EMPTY_PAGE);
-  await page.evaluate(() => navigator.serviceWorker.register('/sw.js'));
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.register('/sw.js');
+    await new Promise(resolve => navigator.serviceWorker.oncontrollerchange = resolve);
+  });
   await page.reload();
   expect(await page.textContent('body')).toBe('intercepted');
 });
@@ -207,4 +213,23 @@ it('webkit should define window.safari', async ({ page, server, browserName }) =
   await page.goto(server.EMPTY_PAGE);
   const defined = await page.evaluate(() => !!(window as any).safari);
   expect(defined).toBeTruthy();
+});
+
+it('make sure that XMLHttpRequest upload events are emitted correctly', async ({ page, server }) => {
+  it.info().annotations.push({ type: 'issue', description: 'https://github.com/microsoft/playwright/issues/21489' });
+
+  await page.goto(server.EMPTY_PAGE);
+  const events = await page.evaluate(async () => {
+    const events: string[] = [];
+    const xhr = new XMLHttpRequest();
+    xhr.upload.addEventListener('loadstart', () => events.push('loadstart'));
+    xhr.upload.addEventListener('progress', () => events.push('progress'));
+    xhr.upload.addEventListener('load', () => events.push('load'));
+    xhr.upload.addEventListener('loadend', () => events.push('loadend'));
+    xhr.open('POST', '/simple.json');
+    xhr.send('hello');
+    await new Promise(f => xhr.onload = f);
+    return events;
+  });
+  expect(events).toEqual(['loadstart', 'progress', 'load', 'loadend']);
 });

@@ -19,7 +19,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { sourceMapSupport } from '../utilsBundle';
-import { isWorkerProcess } from './globals';
+import { sanitizeForFilePath } from '../util';
 
 export type MemoryCache = {
   codePath: string;
@@ -28,7 +28,11 @@ export type MemoryCache = {
 };
 
 const version = 13;
-const cacheDir = process.env.PWTEST_CACHE_DIR || path.join(os.tmpdir(), 'playwright-transform-cache');
+
+const DEFAULT_CACHE_DIR_WIN32 = path.join(os.tmpdir(), `playwright-transform-cache`);
+const DEFAULT_CACHE_DIR_POSIX = path.join(os.tmpdir(), `playwright-transform-cache-` + sanitizeForFilePath(os.userInfo().username));
+
+const cacheDir = process.env.PWTEST_CACHE_DIR || (process.platform === 'win32' ? DEFAULT_CACHE_DIR_WIN32 : DEFAULT_CACHE_DIR_POSIX);
 
 const sourceMaps: Map<string, string> = new Map();
 const memoryCache = new Map<string, MemoryCache>();
@@ -66,9 +70,6 @@ export function getFromCompilationCache(filename: string, code: string, moduleUr
   const cache = memoryCache.get(filename);
   if (cache?.codePath)
     return { cachedCode: fs.readFileSync(cache.codePath, 'utf-8') };
-
-  if (isWorkerProcess())
-    throw new Error('Internal error: unexpected file imported in the worker: ' + filename);
 
   // Then do the disk cache, this cache works between the Playwright Test runs.
   const isModule = !!moduleUrl;

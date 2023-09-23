@@ -16,24 +16,26 @@
 
 import type { TestBeginPayload, TestEndPayload, DonePayload, TestOutputPayload, StepBeginPayload, StepEndPayload, TeardownErrorsPayload, RunPayload, SerializedConfig } from '../common/ipc';
 import { serializeConfig } from '../common/ipc';
-import type { TestResult, Reporter, TestStep, TestError } from '../../types/testReporter';
+import type { TestResult, TestStep, TestError } from '../../types/testReporter';
 import type { Suite } from '../common/test';
 import type { ProcessExitData } from './processHost';
 import type { TestCase } from '../common/test';
 import { ManualPromise } from 'playwright-core/lib/utils';
 import { WorkerHost } from './workerHost';
 import type { TestGroup } from './testGroups';
-import type { FullConfigInternal } from '../common/types';
+import type { FullConfigInternal } from '../common/config';
+import type { Multiplexer } from '../reporters/multiplexer';
 
 type TestResultData = {
   result: TestResult;
   steps: Map<string, TestStep>;
-  stepStack: Set<TestStep>;
 };
 type TestData = {
   test: TestCase;
   resultByWorkerIndex: Map<number, TestResultData>;
 };
+
+export type EnvByProjectId = Map<string, Record<string, string | undefined>>;
 
 export class Dispatcher {
   private _workerSlots: { busy: boolean, worker?: WorkerHost }[] = [];
@@ -44,11 +46,14 @@ export class Dispatcher {
 
   private _testById = new Map<string, TestData>();
   private _config: FullConfigInternal;
-  private _reporter: Reporter;
+  private _reporter: Multiplexer;
   private _hasWorkerErrors = false;
   private _failureCount = 0;
 
-  constructor(config: FullConfigInternal, reporter: Reporter) {
+  private _extraEnvByProjectId: EnvByProjectId = new Map();
+  private _producedEnvByProjectId: EnvByProjectId = new Map();
+
+  constructor(config: FullConfigInternal, reporter: Multiplexer) {
     this._config = config;
     this._reporter = reporter;
   }
@@ -164,7 +169,8 @@ export class Dispatcher {
     return workersWithSameHash > this._queuedOrRunningHashCount.get(worker.hash())!;
   }
 
-  async run(testGroups: TestGroup[]) {
+  async run(testGroups: TestGroup[], extraEnvByProjectId: EnvByProjectId) {
+    this._extraEnvByProjectId = extraEnvByProjectId;
     this._queue = testGroups;
     for (const group of testGroups) {
       this._queuedOrRunningHashCount.set(group.workerHash, 1 + (this._queuedOrRunningHashCount.get(group.workerHash) || 0));
@@ -174,7 +180,7 @@ export class Dispatcher {
     this._isStopped = false;
     this._workerSlots = [];
     // 1. Allocate workers.
-    for (let i = 0; i < this._config.workers; i++)
+    for (let i = 0; i < this._config.config.workers; i++)
       this._workerSlots.push({ busy: false });
     // 2. Schedule enough jobs.
     for (let i = 0; i < this._workerSlots.length; i++)
@@ -212,7 +218,7 @@ export class Dispatcher {
     const onTestBegin = (params: TestBeginPayload) => {
       const data = this._testById.get(params.testId)!;
       const result = data.test._appendTestResult();
-      data.resultByWorkerIndex.set(worker.workerIndex, { result, stepStack: new Set(), steps: new Map() });
+      data.resultByWorkerIndex.set(worker.workerIndex, { result, steps: new Map() });
       result.parallelIndex = worker.parallelIndex;
       result.workerIndex = worker.workerIndex;
       result.startTime = new Date(params.startWallTime);
@@ -261,8 +267,8 @@ export class Dispatcher {
         // The test has finished, but steps are still coming. Just ignore them.
         return;
       }
-      const { result, steps, stepStack } = runData;
-      const parentStep = params.forceNoParent ? undefined : [...stepStack].pop();
+      const { result, steps } = runData;
+      const parentStep = params.parentStepId ? steps.get(params.parentStepId) : undefined;
       const step: TestStep = {
         title: params.title,
         titlePath: () => {
@@ -278,8 +284,6 @@ export class Dispatcher {
       };
       steps.set(params.stepId, step);
       (parentStep || result).steps.push(step);
-      if (params.canHaveChildren)
-        stepStack.add(step);
       this._reporter.onStepBegin?.(data.test, result, step);
     };
     worker.on('stepBegin', onStepBegin);
@@ -291,7 +295,7 @@ export class Dispatcher {
         // The test has finished, but steps are still coming. Just ignore them.
         return;
       }
-      const { result, steps, stepStack } = runData;
+      const { result, steps } = runData;
       const step = steps.get(params.stepId);
       if (!step) {
         this._reporter.onStdErr?.('Internal error: step end without step begin: ' + params.stepId, data.test, result);
@@ -302,7 +306,6 @@ export class Dispatcher {
       step.duration = params.wallTime - step.startTime.getTime();
       if (params.error)
         step.error = params.error;
-      stepStack.delete(step);
       steps.delete(params.stepId);
       this._reporter.onStepEnd?.(data.test, result, step);
     };
@@ -452,7 +455,7 @@ export class Dispatcher {
   }
 
   _createWorker(testGroup: TestGroup, parallelIndex: number, loaderData: SerializedConfig) {
-    const worker = new WorkerHost(testGroup, parallelIndex, loaderData);
+    const worker = new WorkerHost(testGroup, parallelIndex, loaderData, this._extraEnvByProjectId.get(testGroup.projectId) || {});
     const handleOutput = (params: TestOutputPayload) => {
       const chunk = chunkFromParams(params);
       if (worker.didFail()) {
@@ -481,7 +484,15 @@ export class Dispatcher {
       for (const error of params.fatalErrors)
         this._reporter.onError?.(error);
     });
+    worker.on('exit', () => {
+      const producedEnv = this._producedEnvByProjectId.get(testGroup.projectId) || {};
+      this._producedEnvByProjectId.set(testGroup.projectId, { ...producedEnv, ...worker.producedEnv() });
+    });
     return worker;
+  }
+
+  producedEnvByProjectId() {
+    return this._producedEnvByProjectId;
   }
 
   async stop() {
@@ -493,7 +504,7 @@ export class Dispatcher {
   }
 
   private _hasReachedMaxFailures() {
-    const maxFailures = this._config.maxFailures;
+    const maxFailures = this._config.config.maxFailures;
     return maxFailures > 0 && this._failureCount >= maxFailures;
   }
 
@@ -501,7 +512,7 @@ export class Dispatcher {
     if (result.status !== 'skipped' && result.status !== test.expectedStatus)
       ++this._failureCount;
     this._reporter.onTestEnd?.(test, result);
-    const maxFailures = this._config.maxFailures;
+    const maxFailures = this._config.config.maxFailures;
     if (maxFailures && this._failureCount === maxFailures)
       this.stop().catch(e => {});
   }

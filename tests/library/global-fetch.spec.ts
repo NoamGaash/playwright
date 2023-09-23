@@ -97,6 +97,44 @@ it('should return error with wrong credentials', async ({ playwright, server }) 
   expect(response.status()).toBe(401);
 });
 
+it('should work with correct credentials and matching origin', async ({ playwright, server }) => {
+  server.setAuth('/empty.html', 'user', 'pass');
+  const request = await playwright.request.newContext({ httpCredentials: { username: 'user', password: 'pass', origin: server.PREFIX } });
+  const response = await request.get(server.EMPTY_PAGE);
+  expect(response.status()).toBe(200);
+});
+
+it('should work with correct credentials and matching origin case insensitive', async ({ playwright, server }) => {
+  server.setAuth('/empty.html', 'user', 'pass');
+  const request = await playwright.request.newContext({ httpCredentials: { username: 'user', password: 'pass', origin: server.PREFIX.toUpperCase() } });
+  const response = await request.get(server.EMPTY_PAGE);
+  expect(response.status()).toBe(200);
+});
+
+it('should return error with correct credentials and mismatching scheme', async ({ playwright, server }) => {
+  server.setAuth('/empty.html', 'user', 'pass');
+  const request = await playwright.request.newContext({ httpCredentials: { username: 'user', password: 'pass', origin: server.PREFIX.replace('http://', 'https://') } });
+  const response = await request.get(server.EMPTY_PAGE);
+  expect(response.status()).toBe(401);
+});
+
+it('should return error with correct credentials and mismatching hostname', async ({ playwright, server }) => {
+  server.setAuth('/empty.html', 'user', 'pass');
+  const hostname = new URL(server.PREFIX).hostname;
+  const origin = server.PREFIX.replace(hostname, 'mismatching-hostname');
+  const request = await playwright.request.newContext({ httpCredentials: { username: 'user', password: 'pass', origin: origin } });
+  const response = await request.get(server.EMPTY_PAGE);
+  expect(response.status()).toBe(401);
+});
+
+it('should return error with correct credentials and mismatching port', async ({ playwright, server }) => {
+  server.setAuth('/empty.html', 'user', 'pass');
+  const origin = server.PREFIX.replace(server.PORT.toString(), (server.PORT + 1).toString());
+  const request = await playwright.request.newContext({ httpCredentials: { username: 'user', password: 'pass', origin: origin } });
+  const response = await request.get(server.EMPTY_PAGE);
+  expect(response.status()).toBe(401);
+});
+
 it('should support WWW-Authenticate: Basic', async ({ playwright, server }) => {
   let credentials;
   server.setRoute('/empty.html', (req, res) => {
@@ -399,5 +437,21 @@ it('should throw an error when maxRedirects is less than 0', async ({ playwright
   const request = await playwright.request.newContext();
   for (const method of ['GET', 'PUT', 'POST', 'OPTIONS', 'HEAD', 'PATCH'])
     await expect(async () => request.fetch(`${server.PREFIX}/a/redirect1`, { method, maxRedirects: -1 })).rejects.toThrow(`'maxRedirects' should be greater than or equal to '0'`);
+  await request.dispose();
+});
+
+it('should keep headers capitalization', async ({ playwright, server }) => {
+  const request = await playwright.request.newContext();
+  const [serverRequest, response] = await Promise.all([
+    server.waitForRequest('/empty.html'),
+    request.get(server.EMPTY_PAGE, {
+      headers: {
+        'X-fOo': 'vaLUE',
+      }
+    }),
+  ]);
+  expect(response.ok()).toBeTruthy();
+  expect(serverRequest.rawHeaders).toContain('X-fOo');
+  expect(serverRequest.rawHeaders).toContain('vaLUE');
   await request.dispose();
 });

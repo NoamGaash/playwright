@@ -714,6 +714,10 @@ export module Protocol {
        * Grouping list array (for rules involving @media/@supports). The array enumerates CSS groupings starting with the innermost one, going outwards.
        */
       groupings?: Grouping[];
+      /**
+       * <code>true</code> if this style is for a rule implicitly wrapping properties declared inside of CSSGrouping.
+       */
+      isImplicitlyNested?: boolean;
     }
     /**
      * Text range within a resource.
@@ -1233,7 +1237,7 @@ export module Protocol {
     /**
      * The type of rendering context backing the canvas element.
      */
-    export type ContextType = "canvas-2d"|"bitmaprenderer"|"webgl"|"webgl2";
+    export type ContextType = "canvas-2d"|"offscreen-canvas-2d"|"bitmaprenderer"|"webgl"|"webgl2";
     export type ProgramType = "compute"|"render";
     export type ShaderType = "compute"|"fragment"|"vertex";
     /**
@@ -1541,6 +1545,10 @@ export module Protocol {
      */
     export type ChannelLevel = "off"|"basic"|"verbose";
     /**
+     * The reason the console is being cleared.
+     */
+    export type ClearReason = "console-api"|"main-frame-navigation";
+    /**
      * Logging channel.
      */
     export interface Channel {
@@ -1666,7 +1674,12 @@ export module Protocol {
     /**
      * Issued when console is cleared. This happens either upon <code>clearMessages</code> command or after page navigation.
      */
-    export type messagesClearedPayload = void;
+    export type messagesClearedPayload = {
+      /**
+       * The reason the console is being cleared.
+       */
+      reason: ClearReason;
+    }
     /**
      * Issued from console.takeHeapSnapshot.
      */
@@ -7639,7 +7652,7 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
     /**
      * The type of the recording.
      */
-    export type Type = "canvas-2d"|"canvas-bitmaprenderer"|"canvas-webgl"|"canvas-webgl2";
+    export type Type = "canvas-2d"|"offscreen-canvas-2d"|"canvas-bitmaprenderer"|"canvas-webgl"|"canvas-webgl2";
     export type Initiator = "frontend"|"console"|"auto-capture";
     /**
      * Information about the initial state of the recorded object.
@@ -7875,6 +7888,10 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
        * Property symbol object, if the property is a symbol.
        */
       symbol?: Runtime.RemoteObject;
+      /**
+       * True if the property is a private field.
+       */
+      isPrivate?: boolean;
       /**
        * True if the property value came from a native getter.
        */

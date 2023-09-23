@@ -347,7 +347,8 @@ export interface FullProject<TestArgs = {}, WorkerArgs = {}> {
    * Only the files matching one of these patterns are executed as test files. Matching is performed against the
    * absolute file path. Strings are treated as glob patterns.
    *
-   * By default, Playwright Test looks for files matching `.*(test|spec)\.(js|ts|mjs)`.
+   * By default, Playwright looks for files matching the following glob pattern: `**\/?(*.)@(spec|test).?(m)[jt]s?(x)`.
+   * This means JavaScript or TypeScript files with `".test"` or `".spec"` suffix, for example `login-screen.spec.ts`.
    *
    * Use [testConfig.testMatch](https://playwright.dev/docs/api/class-testconfig#test-config-test-match) to change this
    * option for all projects.
@@ -469,7 +470,7 @@ interface TestConfig {
    * export default defineConfig({
    *   webServer: {
    *     command: 'npm run start',
-   *     port: 3000,
+   *     url: 'http://127.0.0.1:3000',
    *     timeout: 120 * 1000,
    *     reuseExistingServer: !process.env.CI,
    *   },
@@ -500,19 +501,19 @@ interface TestConfig {
    *   webServer: [
    *     {
    *       command: 'npm run start',
-   *       port: 3000,
+   *       url: 'http://127.0.0.1:3000',
    *       timeout: 120 * 1000,
    *       reuseExistingServer: !process.env.CI,
    *     },
    *     {
    *       command: 'npm run backend',
-   *       port: 3333,
+   *       url: 'http://127.0.0.1:3333',
    *       timeout: 120 * 1000,
    *       reuseExistingServer: !process.env.CI,
    *     }
    *   ],
    *   use: {
-   *     baseURL: 'http://localhost:3000/',
+   *     baseURL: 'http://127.0.0.1:3000',
    *   },
    * });
    * ```
@@ -1150,24 +1151,6 @@ interface TestConfig {
   snapshotPathTemplate?: string;
 
   /**
-   * Directory where the values accessible via [TestStore] are persisted. All pahts in [TestStore] are relative to
-   * `storeDir`. Defaults to `./playwright`.
-   *
-   * **Usage**
-   *
-   * ```js
-   * // playwright.config.ts
-   * import { defineConfig } from '@playwright/test';
-   *
-   * export default defineConfig({
-   *   storeDir: './playwright-store',
-   * });
-   * ```
-   *
-   */
-  storeDir?: string;
-
-  /**
    * Directory that will be recursively scanned for test files. Defaults to the directory of the configuration file.
    *
    * **Usage**
@@ -1208,7 +1191,8 @@ interface TestConfig {
    * Only the files matching one of these patterns are executed as test files. Matching is performed against the
    * absolute file path. Strings are treated as glob patterns.
    *
-   * By default, Playwright Test looks for files matching `.*(test|spec)\.(js|ts|mjs)`.
+   * By default, Playwright looks for files matching the following glob pattern: `**\/?(*.)@(spec|test).?(m)[jt]s?(x)`.
+   * This means JavaScript or TypeScript files with `".test"` or `".spec"` suffix, for example `login-screen.spec.ts`.
    *
    * **Usage**
    *
@@ -1744,7 +1728,7 @@ export interface FullConfig<TestArgs = {}, WorkerArgs = {}> {
    * export default defineConfig({
    *   webServer: {
    *     command: 'npm run start',
-   *     port: 3000,
+   *     url: 'http://127.0.0.1:3000',
    *     timeout: 120 * 1000,
    *     reuseExistingServer: !process.env.CI,
    *   },
@@ -1775,19 +1759,19 @@ export interface FullConfig<TestArgs = {}, WorkerArgs = {}> {
    *   webServer: [
    *     {
    *       command: 'npm run start',
-   *       port: 3000,
+   *       url: 'http://127.0.0.1:3000',
    *       timeout: 120 * 1000,
    *       reuseExistingServer: !process.env.CI,
    *     },
    *     {
    *       command: 'npm run backend',
-   *       port: 3333,
+   *       url: 'http://127.0.0.1:3333',
    *       timeout: 120 * 1000,
    *       reuseExistingServer: !process.env.CI,
    *     }
    *   ],
    *   use: {
-   *     baseURL: 'http://localhost:3000/',
+   *     baseURL: 'http://127.0.0.1:3000',
    *   },
    * });
    * ```
@@ -1800,19 +1784,8 @@ export interface FullConfig<TestArgs = {}, WorkerArgs = {}> {
 export type TestStatus = 'passed' | 'failed' | 'timedOut' | 'skipped' | 'interrupted';
 
 /**
- * `WorkerInfo` contains information about the worker that is running tests. It is available to
- * [test.beforeAll(hookFunction)](https://playwright.dev/docs/api/class-test#test-before-all) and
- * [test.afterAll(hookFunction)](https://playwright.dev/docs/api/class-test#test-after-all) hooks and worker-scoped
- * fixtures.
- *
- * ```js
- * import { test, expect } from '@playwright/test';
- *
- * test.beforeAll(async ({ browserName }, workerInfo) => {
- *   console.log(`Running ${browserName} in worker #${workerInfo.workerIndex}`);
- * });
- * ```
- *
+ * `WorkerInfo` contains information about the worker that is running tests and is available to worker-scoped
+ * fixtures. `WorkerInfo` is a subset of [TestInfo] that is available in many other places.
  */
 export interface WorkerInfo {
   /**
@@ -1844,9 +1817,11 @@ export interface WorkerInfo {
 }
 
 /**
- * `TestInfo` contains information about currently running test. It is available to any test function,
- * [test.beforeEach(hookFunction)](https://playwright.dev/docs/api/class-test#test-before-each) and
- * [test.afterEach(hookFunction)](https://playwright.dev/docs/api/class-test#test-after-each) hooks and test-scoped
+ * `TestInfo` contains information about currently running test. It is available to test functions,
+ * [test.beforeEach(hookFunction)](https://playwright.dev/docs/api/class-test#test-before-each),
+ * [test.afterEach(hookFunction)](https://playwright.dev/docs/api/class-test#test-after-each),
+ * [test.beforeAll(hookFunction)](https://playwright.dev/docs/api/class-test#test-before-all) and
+ * [test.afterAll(hookFunction)](https://playwright.dev/docs/api/class-test#test-after-all) hooks, and test-scoped
  * fixtures. `TestInfo` provides utilities to control test execution: attach files, update test timeout, determine
  * which test is currently running and whether it was retried, etc.
  *
@@ -1889,9 +1864,9 @@ export interface TestInfo {
    *
    * ```js
    * import { test, expect } from '@playwright/test';
+   * import { download } from './my-custom-helpers';
    *
    * test('basic test', async ({}, testInfo) => {
-   *   const { download } = require('./my-custom-helpers');
    *   const tmpPath = await download('a');
    *   await testInfo.attach('downloaded', { path: tmpPath });
    * });
@@ -2243,6 +2218,11 @@ export interface TestInfo {
    * Output written to `process.stdout` or `console.log` during the test execution.
    */
   stdout: Array<string|Buffer>;
+
+  /**
+   * Test id matching the test case id in the reporter API.
+   */
+  testId: string;
 
   /**
    * Timeout in milliseconds for the currently running test. Zero means no timeout. Learn more about
@@ -3167,7 +3147,7 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    *
    * **Details**
    *
-   * The method returns the value retuned by the step callback.
+   * The method returns the value returned by the step callback.
    *
    * ```js
    * import { test, expect } from '@playwright/test';
@@ -3323,42 +3303,6 @@ type ConnectOptions = {
 };
 
 /**
- * Playwright Test provides a global `store` object that can be used to read/write values on the filesystem. Each
- * value is stored in its own file inside './playwright' directory, configurable with
- * [testConfig.storeDir](https://playwright.dev/docs/api/class-testconfig#test-config-store-dir).
- *
- */
-export interface TestStore {
-  /**
-   * Get named item from the store. Returns undefined if there is no value with given path.
-   * @param path Item path.
-   */
-  get<T>(path: string): Promise<T | undefined>;
-  /**
-   * Set value to the store.
-   * @param path Item path.
-   * @param value Item value. The value must be serializable to JSON. Passing `undefined` deletes the entry with given path.
-   */
-  set<T>(path: string, value: T | undefined): Promise<void>;
-  /**
-   * Delete named item from the store. Does nothing if the path is not in the store.
-   * @param path Item path.
-   */
-  delete(path: string): Promise<void>;
-
-  /**
-   * Returns absolute path of the corresponding store entry on the file system.
-   * @param path Path of the item in the store.
-   */
-  path(path: string): string;
-
-  /**
-   * Returns absolute path of the store root directory.
-   */
-  root(): string;
-}
-
-/**
  * Playwright Test provides many options to configure test environment, [Browser], [BrowserContext] and more.
  *
  * These options are usually provided in the [configuration file](https://playwright.dev/docs/test-configuration) through
@@ -3366,7 +3310,7 @@ export interface TestStore {
  * [testProject.use](https://playwright.dev/docs/api/class-testproject#test-project-use).
  *
  * ```js
- * import type { PlaywrightTestConfig } from '@playwright/test';
+ * import { defineConfig } from '@playwright/test';
  * export default defineConfig({
  *   use: {
  *     headless: false,
@@ -3458,6 +3402,7 @@ export interface PlaywrightWorkerOptions {
    * - `'on'`: Record trace for each test.
    * - `'retain-on-failure'`: Record trace for each test, but remove all traces from successful test runs.
    * - `'on-first-retry'`: Record trace only when retrying a test for the first time.
+   * - `'on-all-retries'`: Record traces only when retrying for all retries.
    *
    * For more control, pass an object that specifies `mode` and trace features to enable.
    *
@@ -3482,7 +3427,7 @@ export interface PlaywrightWorkerOptions {
 }
 
 export type ScreenshotMode = 'off' | 'on' | 'only-on-failure';
-export type TraceMode = 'off' | 'on' | 'retain-on-failure' | 'on-first-retry';
+export type TraceMode = 'off' | 'on' | 'retain-on-failure' | 'on-first-retry' | 'on-all-retries';
 export type VideoMode = 'off' | 'on' | 'retain-on-failure' | 'on-first-retry';
 
 /**
@@ -3493,7 +3438,7 @@ export type VideoMode = 'off' | 'on' | 'retain-on-failure' | 'on-first-retry';
  * [testProject.use](https://playwright.dev/docs/api/class-testproject#test-project-use).
  *
  * ```js
- * import type { PlaywrightTestConfig } from '@playwright/test';
+ * import { defineConfig } from '@playwright/test';
  * export default defineConfig({
  *   use: {
  *     headless: false,
@@ -3549,7 +3494,8 @@ export interface PlaywrightTestOptions {
    */
   hasTouch: boolean;
   /**
-   * Credentials for [HTTP authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication).
+   * Credentials for [HTTP authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication). If no
+   * origin is specified, the username and password are sent to any servers upon unauthorized responses.
    */
   httpCredentials: HTTPCredentials | undefined;
   /**
@@ -4308,7 +4254,6 @@ export default test;
 
 export const _baseTest: TestType<{}, {}>;
 export const expect: Expect;
-export const store: TestStore;
 
 /**
  * Defines Playwright config
@@ -4377,6 +4322,26 @@ interface APIResponseAssertions {
  *
  */
 interface LocatorAssertions {
+  /**
+   * Ensures that [Locator] points to an [attached](https://playwright.dev/docs/actionability#attached) DOM node.
+   *
+   * **Usage**
+   *
+   * ```js
+   * await expect(page.getByText('Hidden text')).toBeAttached();
+   * ```
+   *
+   * @param options
+   */
+  toBeAttached(options?: {
+    attached?: boolean;
+
+    /**
+     * Time to retry the assertion for. Defaults to `timeout` in `TestConfig.expect`.
+     */
+    timeout?: number;
+  }): Promise<void>;
+
   /**
    * Ensures the [Locator] points to a checked input.
    *
@@ -4559,8 +4524,7 @@ interface LocatorAssertions {
    * **Usage**
    *
    * ```js
-   * const locator = page.locator('.my-element');
-   * await expect(locator).toBeVisible();
+   * await expect(page.getByText('Welcome')).toBeVisible();
    * ```
    *
    * @param options
@@ -5911,7 +5875,8 @@ interface TestProject {
    * Only the files matching one of these patterns are executed as test files. Matching is performed against the
    * absolute file path. Strings are treated as glob patterns.
    *
-   * By default, Playwright Test looks for files matching `.*(test|spec)\.(js|ts|mjs)`.
+   * By default, Playwright looks for files matching the following glob pattern: `**\/?(*.)@(spec|test).?(m)[jt]s?(x)`.
+   * This means JavaScript or TypeScript files with `".test"` or `".spec"` suffix, for example `login-screen.spec.ts`.
    *
    * Use [testConfig.testMatch](https://playwright.dev/docs/api/class-testconfig#test-config-test-match) to change this
    * option for all projects.
@@ -5946,7 +5911,8 @@ interface TestConfigWebServer {
 
   /**
    * The url on your http server that is expected to return a 2xx, 3xx, 400, 401, 402, or 403 status code when the
-   * server is ready to accept connections. Exactly one of `port` or `url` is required.
+   * server is ready to accept connections. Redirects (3xx status codes) are being followed and the new location is
+   * checked. Exactly one of `port` or `url` is required.
    */
   url?: string;
 

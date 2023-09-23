@@ -53,16 +53,7 @@ By default, tests in a single file are run in order. If you have many independen
 
 Note that parallel tests are executed in separate worker processes and cannot share any state or global variables. Each test executes all relevant hooks just for itself, including `beforeAll` and `afterAll`.
 
-```js tab=js-js
-const { test } = require('@playwright/test');
-
-test.describe.configure({ mode: 'parallel' });
-
-test('runs in parallel 1', async ({ page }) => { /* ... */ });
-test('runs in parallel 2', async ({ page }) => { /* ... */ });
-```
-
-```js tab=js-ts
+```js
 import { test } from '@playwright/test';
 
 test.describe.configure({ mode: 'parallel' });
@@ -183,6 +174,10 @@ There is no guarantee about the order of test execution across the files, becaus
 When you **disable parallel test execution**, Playwright Test runs test files in alphabetical order. You can use some naming convention to control the test order, for example `001-user-signin-flow.spec.ts`, `002-create-new-document.spec.ts` and so on.
 
 ### Use a "test list" file
+
+:::warning
+Tests lists are discouraged and supported as a best-effort only. Some fetures such as VS Code Extension and tracing may not work properly with test lists.
+:::
 
 You can put your tests in helper functions in multiple files. Consider the following example where tests are not defined directly in the file, but rather in a wrapper function.
 

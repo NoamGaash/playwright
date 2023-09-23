@@ -20,269 +20,512 @@ import '@web/common.css';
 import React from 'react';
 import { TreeView } from '@web/components/treeView';
 import type { TreeState } from '@web/components/treeView';
-import { TeleReporterReceiver } from '../../../playwright-test/src/isomorphic/teleReceiver';
-import type { FullConfig, Suite, TestCase, TestResult, TestStep, Location } from '../../../playwright-test/types/testReporter';
+import { baseFullConfig, TeleReporterReceiver, TeleSuite } from '@testIsomorphic/teleReceiver';
+import type { TeleTestCase } from '@testIsomorphic/teleReceiver';
+import type { FullConfig, Suite, TestCase, Location, TestError } from '../../../playwright-test/types/testReporter';
 import { SplitView } from '@web/components/splitView';
-import { MultiTraceModel } from './modelUtil';
+import { idForAction, MultiTraceModel } from './modelUtil';
 import './watchMode.css';
 import { ToolbarButton } from '@web/components/toolbarButton';
 import { Toolbar } from '@web/components/toolbar';
-import { toggleTheme } from '@web/theme';
 import type { ContextEntry } from '../entries';
-import type * as trace from '@trace/trace';
 import type { XtermDataSource } from '@web/components/xtermWrapper';
 import { XtermWrapper } from '@web/components/xtermWrapper';
+import { Expandable } from '@web/components/expandable';
+import { toggleTheme } from '@web/theme';
+import { artifactsFolderName } from '@testIsomorphic/folders';
+import { msToString, settings, useSetting } from '@web/uiUtils';
+import type { ActionTraceEvent } from '@trace/trace';
 
-let updateRootSuite: (rootSuite: Suite, progress: Progress) => void = () => {};
-let updateStepsProgress: () => void = () => {};
-let runWatchedTests = () => {};
-let runVisibleTests = () => {};
+let updateRootSuite: (config: FullConfig, rootSuite: Suite, progress: Progress | undefined) => void = () => {};
+let runWatchedTests = (fileNames: string[]) => {};
+let xtermSize = { cols: 80, rows: 24 };
 
 const xtermDataSource: XtermDataSource = {
   pending: [],
   clear: () => {},
   write: data => xtermDataSource.pending.push(data),
-  resize: (cols: number, rows: number) => sendMessageNoReply('resizeTerminal', { cols, rows }),
+  resize: (cols: number, rows: number) => {
+    xtermSize = { cols, rows };
+    sendMessageNoReply('resizeTerminal', { cols, rows });
+  },
+};
+
+type TestModel = {
+  config: FullConfig | undefined;
+  rootSuite: Suite | undefined;
 };
 
 export const WatchModeView: React.FC<{}> = ({
 }) => {
-  const [projects, setProjects] = React.useState<Map<string, boolean>>(new Map());
-  const [rootSuite, setRootSuite] = React.useState<{ value: Suite | undefined }>({ value: undefined });
-  const [isRunningTest, setIsRunningTest] = React.useState<boolean>(false);
-  const [progress, setProgress] = React.useState<Progress>({ total: 0, passed: 0, failed: 0 });
-  const [selectedTest, setSelectedTest] = React.useState<TestCase | undefined>(undefined);
-  const [settingsVisible, setSettingsVisible] = React.useState<boolean>(false);
-  const [isWatchingFiles, setIsWatchingFiles] = React.useState<boolean>(true);
+  const [filterText, setFilterText] = React.useState<string>('');
+  const [isShowingOutput, setIsShowingOutput] = React.useState<boolean>(false);
 
-  updateRootSuite = (rootSuite: Suite, { passed, failed }: Progress) => {
-    for (const projectName of projects.keys()) {
-      if (!rootSuite.suites.find(s => s.title === projectName))
-        projects.delete(projectName);
-    }
-    for (const projectSuite of rootSuite.suites) {
-      if (!projects.has(projectSuite.title))
-        projects.set(projectSuite.title, false);
-    }
-    if (![...projects.values()].includes(true))
-      projects.set(projects.entries().next().value[0], true);
+  const [statusFilters, setStatusFilters] = React.useState<Map<string, boolean>>(new Map([
+    ['passed', false],
+    ['failed', false],
+    ['skipped', false],
+  ]));
+  const [projectFilters, setProjectFilters] = React.useState<Map<string, boolean>>(new Map());
+  const [testModel, setTestModel] = React.useState<TestModel>({ config: undefined, rootSuite: undefined });
+  const [progress, setProgress] = React.useState<Progress & { total: number } | undefined>();
+  const [selectedItem, setSelectedItem] = React.useState<{ location?: Location, testCase?: TestCase }>({});
+  const [visibleTestIds, setVisibleTestIds] = React.useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const [runningState, setRunningState] = React.useState<{ testIds: Set<string>, itemSelectedByUser?: boolean } | undefined>();
+  const [watchAll, setWatchAll] = useSetting<boolean>('watch-all', false);
+  const [watchedTreeIds, setWatchedTreeIds] = React.useState<{ value: Set<string> }>({ value: new Set() });
+  const runTestPromiseChain = React.useRef(Promise.resolve());
+  const runTestBacklog = React.useRef<Set<string>>(new Set());
 
-    progress.passed = passed;
-    progress.failed = failed;
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
-    setRootSuite({ value: rootSuite });
-    setProjects(new Map(projects));
-    setProgress({ ...progress });
-  };
-
-  const runTests = (testIds: string[]) => {
-    setProgress({ total: testIds.length, passed: 0, failed: 0 });
-    setIsRunningTest(true);
-    sendMessage('run', { testIds }).then(() => {
-      setIsRunningTest(false);
+  const reloadTests = () => {
+    setIsLoading(true);
+    setWatchedTreeIds({ value: new Set() });
+    updateRootSuite(baseFullConfig, new TeleSuite('', 'root'), undefined);
+    refreshRootSuite(true).then(() => {
+      setIsLoading(false);
     });
   };
 
-  return <div className='vbox'>
+  React.useEffect(() => {
+    inputRef.current?.focus();
+    reloadTests();
+  }, []);
+
+  updateRootSuite = (config: FullConfig, rootSuite: Suite, newProgress: Progress | undefined) => {
+    const selectedProjects = config.configFile ? settings.getObject<string[] | undefined>(config.configFile + ':projects', undefined) : undefined;
+    for (const projectName of projectFilters.keys()) {
+      if (!rootSuite.suites.find(s => s.title === projectName))
+        projectFilters.delete(projectName);
+    }
+    for (const projectSuite of rootSuite.suites) {
+      if (!projectFilters.has(projectSuite.title))
+        projectFilters.set(projectSuite.title, !!selectedProjects?.includes(projectSuite.title));
+    }
+    if (!selectedProjects && projectFilters.size && ![...projectFilters.values()].includes(true))
+      projectFilters.set(projectFilters.entries().next().value[0], true);
+
+    setTestModel({ config, rootSuite });
+    setProjectFilters(new Map(projectFilters));
+    if (runningState && newProgress)
+      setProgress({ ...newProgress, total: runningState.testIds.size });
+    else if (!newProgress)
+      setProgress(undefined);
+  };
+
+  const runTests = React.useCallback((mode: 'queue-if-busy' | 'bounce-if-busy', testIds: Set<string>) => {
+    if (mode === 'bounce-if-busy' && runningState)
+      return;
+
+    runTestBacklog.current = new Set([...runTestBacklog.current, ...testIds]);
+    runTestPromiseChain.current = runTestPromiseChain.current.then(async () => {
+      const testIds = runTestBacklog.current;
+      runTestBacklog.current = new Set();
+      if (!testIds.size)
+        return;
+
+      // Clear test results.
+      {
+        for (const test of testModel.rootSuite?.allTests() || []) {
+          if (testIds.has(test.id)) {
+            (test as TeleTestCase)._clearResults();
+            (test as TeleTestCase)._createTestResult('pending');
+          }
+        }
+        setTestModel({ ...testModel });
+      }
+
+      const time = '  [' + new Date().toLocaleTimeString() + ']';
+      xtermDataSource.write('\x1B[2m—'.repeat(Math.max(0, xtermSize.cols - time.length)) + time + '\x1B[22m');
+      setProgress({ total: testIds.size, passed: 0, failed: 0, skipped: 0 });
+      setRunningState({ testIds });
+
+      await sendMessage('run', { testIds: [...testIds] });
+      // Clear pending tests in case of interrupt.
+      for (const test of testModel.rootSuite?.allTests() || []) {
+        if (test.results[0]?.duration === -1)
+          (test as TeleTestCase)._clearResults();
+      }
+      setTestModel({ ...testModel });
+      setRunningState(undefined);
+    });
+  }, [runningState, testModel]);
+
+  const isRunningTest = !!runningState;
+
+  return <div className='vbox watch-mode'>
     <SplitView sidebarSize={250} orientation='horizontal' sidebarIsFirst={true}>
-      <TraceView test={selectedTest}></TraceView>
+      <div className='vbox'>
+        <div className={'vbox' + (isShowingOutput ? '' : ' hidden')}>
+          <Toolbar>
+            <div className='section-title' style={{ flex: 'none' }}>Output</div>
+            <ToolbarButton icon='circle-slash' title='Clear output' onClick={() => xtermDataSource.clear()}></ToolbarButton>
+            <div className='spacer'></div>
+            <ToolbarButton icon='close' title='Close' onClick={() => setIsShowingOutput(false)}></ToolbarButton>
+          </Toolbar>
+          <XtermWrapper source={xtermDataSource}></XtermWrapper>
+        </div>
+        <div className={'vbox' + (isShowingOutput ? ' hidden' : '')}>
+          <TraceView item={selectedItem} rootDir={testModel.config?.rootDir} />
+        </div>
+      </div>
       <div className='vbox watch-mode-sidebar'>
-        <Toolbar>
-          <div className='section-title' style={{ cursor: 'pointer' }} onClick={() => setSettingsVisible(false)}>Tests</div>
-          <ToolbarButton icon='play' title='Run' onClick={runVisibleTests} disabled={isRunningTest}></ToolbarButton>
-          <ToolbarButton icon='debug-stop' title='Stop' onClick={() => sendMessageNoReply('stop')} disabled={!isRunningTest}></ToolbarButton>
-          <ToolbarButton icon='refresh' title='Reload' onClick={() => refreshRootSuite(true)} disabled={isRunningTest}></ToolbarButton>
-          <ToolbarButton icon='eye-watch' title='Watch' toggled={isWatchingFiles} onClick={() => setIsWatchingFiles(!isWatchingFiles)}></ToolbarButton>
-          <div className='spacer'></div>
-          <ToolbarButton icon='gear' title='Toggle color mode' toggled={settingsVisible} onClick={() => { setSettingsVisible(!settingsVisible); }}></ToolbarButton>
+        <Toolbar noShadow={true} noMinHeight={true}>
+          <img src='icon-32x32.png' />
+          <div className='section-title'>Playwright</div>
+          <ToolbarButton icon='color-mode' title='Toggle color mode' onClick={() => toggleTheme()} />
+          <ToolbarButton icon='refresh' title='Reload' onClick={() => reloadTests()} disabled={isRunningTest || isLoading}></ToolbarButton>
+          <ToolbarButton icon='terminal' title='Toggle output' toggled={isShowingOutput} onClick={() => { setIsShowingOutput(!isShowingOutput); }} />
+        </Toolbar>
+        <FiltersView
+          filterText={filterText}
+          setFilterText={setFilterText}
+          statusFilters={statusFilters}
+          setStatusFilters={setStatusFilters}
+          projectFilters={projectFilters}
+          setProjectFilters={setProjectFilters}
+          testModel={testModel}
+          runTests={() => runTests('bounce-if-busy', visibleTestIds)} />
+        <Toolbar noMinHeight={true}>
+          {!isRunningTest && !progress && <div className='section-title'>Tests</div>}
+          {!isRunningTest && progress && <div data-testid='status-line' className='status-line'>
+            <div>{progress.passed}/{progress.total} passed ({(progress.passed / progress.total) * 100 | 0}%)</div>
+          </div>}
+          {isRunningTest && progress && <div data-testid='status-line' className='status-line'>
+            <div>Running {progress.passed}/{runningState.testIds.size} passed ({(progress.passed / runningState.testIds.size) * 100 | 0}%)</div>
+          </div>}
+          <ToolbarButton icon='play' title='Run all' onClick={() => runTests('bounce-if-busy', visibleTestIds)} disabled={isRunningTest || isLoading}></ToolbarButton>
+          <ToolbarButton icon='debug-stop' title='Stop' onClick={() => sendMessageNoReply('stop')} disabled={!isRunningTest || isLoading}></ToolbarButton>
+          <ToolbarButton icon='eye' title='Watch all' toggled={watchAll} onClick={() => setWatchAll(!watchAll)}></ToolbarButton>
         </Toolbar>
         <TestList
-          projects={projects}
-          rootSuite={rootSuite}
-          isRunningTest={isRunningTest}
-          isWatchingFiles={isWatchingFiles}
+          statusFilters={statusFilters}
+          projectFilters={projectFilters}
+          filterText={filterText}
+          testModel={testModel}
+          runningState={runningState}
           runTests={runTests}
-          onTestSelected={setSelectedTest}
-          isVisible={!settingsVisible} />
-        {settingsVisible && <SettingsView projects={projects} setProjects={setProjects} onClose={() => setSettingsVisible(false)}></SettingsView>}
+          onItemSelected={setSelectedItem}
+          setVisibleTestIds={setVisibleTestIds}
+          watchAll={watchAll}
+          watchedTreeIds={watchedTreeIds}
+          setWatchedTreeIds={setWatchedTreeIds}
+          isLoading={isLoading} />
       </div>
     </SplitView>
-    <div className='status-line'>
-        Running: {progress.total} tests | {progress.passed} passed | {progress.failed} failed
-    </div>
   </div>;
 };
 
-const TreeListView = TreeView<TreeItem>;
-
-export const TestList: React.FC<{
-  projects: Map<string, boolean>,
-  rootSuite: { value: Suite | undefined },
-  runTests: (testIds: string[]) => void,
-  isRunningTest: boolean,
-  isWatchingFiles: boolean,
-  isVisible: boolean
-  onTestSelected: (test: TestCase | undefined) => void,
-}> = ({ projects, rootSuite, runTests, isRunningTest, isWatchingFiles, isVisible, onTestSelected }) => {
-  const [treeState, setTreeState] = React.useState<TreeState>({ expandedItems: new Map() });
-  const [filterText, setFilterText] = React.useState<string>('');
-  const [selectedTreeItemId, setSelectedTreeItemId] = React.useState<string | undefined>();
+const FiltersView: React.FC<{
+  filterText: string;
+  setFilterText: (text: string) => void;
+  statusFilters: Map<string, boolean>;
+  setStatusFilters: (filters: Map<string, boolean>) => void;
+  projectFilters: Map<string, boolean>;
+  setProjectFilters: (filters: Map<string, boolean>) => void;
+  testModel: TestModel | undefined,
+  runTests: () => void;
+}> = ({ filterText, setFilterText, statusFilters, setStatusFilters, projectFilters, setProjectFilters, testModel, runTests }) => {
+  const [expanded, setExpanded] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
-
   React.useEffect(() => {
     inputRef.current?.focus();
-    refreshRootSuite(true);
   }, []);
 
-  const { rootItem, treeItemMap, visibleTestIds } = React.useMemo(() => {
-    const rootItem = createTree(rootSuite.value, projects);
-    filterTree(rootItem, filterText);
-    const treeItemMap = new Map<string, TreeItem>();
-    const visibleTestIds = new Set<string>();
-    const visit = (treeItem: TreeItem) => {
-      if (treeItem.kind === 'test')
-        visibleTestIds.add(treeItem.id);
-      treeItem.children?.forEach(visit);
-      treeItemMap.set(treeItem.id, treeItem);
-    };
-    visit(rootItem);
-    hideOnlyTests(rootItem);
-    return { rootItem, treeItemMap, visibleTestIds };
-  }, [filterText, rootSuite, projects]);
-
-  runVisibleTests = () => runTests([...visibleTestIds]);
-
-  const { selectedTreeItem } = React.useMemo(() => {
-    const selectedTreeItem = selectedTreeItemId ? treeItemMap.get(selectedTreeItemId) : undefined;
-    let selectedTest: TestCase | undefined;
-    if (selectedTreeItem?.kind === 'test')
-      selectedTest = selectedTreeItem.test;
-    else if (selectedTreeItem?.kind === 'case' && selectedTreeItem.tests.length === 1)
-      selectedTest = selectedTreeItem.tests[0];
-    onTestSelected(selectedTest);
-    return { selectedTreeItem };
-  }, [onTestSelected, selectedTreeItemId, treeItemMap]);
-
-  React.useEffect(() => {
-    sendMessageNoReply('watch', { fileName: isWatchingFiles ? fileName(selectedTreeItem) : undefined });
-  }, [selectedTreeItem, isWatchingFiles]);
-
-  const runTreeItem = (treeItem: TreeItem) => {
-    // expandedItems.set(treeItem.id, true);
-    setSelectedTreeItemId(treeItem.id);
-    runTests(collectTestIds(treeItem));
-  };
-
-  runWatchedTests = () => {
-    runTests(collectTestIds(selectedTreeItem));
-  };
-
-  if (!isVisible)
-    return <></>;
-
-  return <div className='vbox'>
-    <Toolbar>
-      <input ref={inputRef} type='search' placeholder='Filter (e.g. text, @tag)' spellCheck={false} value={filterText}
+  const statusLine = [...statusFilters.entries()].filter(([_, v]) => v).map(([s]) => s).join(' ') || 'all';
+  const projectsLine = [...projectFilters.entries()].filter(([_, v]) => v).map(([p]) => p).join(' ') || 'all';
+  return <div className='filters'>
+    <Expandable
+      expanded={expanded}
+      setExpanded={setExpanded}
+      title={<input ref={inputRef} type='search' placeholder='Filter (e.g. text, @tag)' spellCheck={false} value={filterText}
         onChange={e => {
           setFilterText(e.target.value);
         }}
         onKeyDown={e => {
           if (e.key === 'Enter')
-            runVisibleTests();
-        }}></input>
-    </Toolbar>
-    <TreeListView
-      treeState={treeState}
-      setTreeState={setTreeState}
-      rootItem={rootItem}
-      render={treeItem => {
-        return <div className='hbox watch-mode-list-item'>
-          <div className='watch-mode-list-item-title'>{treeItem.title}</div>
-          <ToolbarButton icon='play' title='Run' onClick={() => runTreeItem(treeItem)} disabled={isRunningTest}></ToolbarButton>
+            runTests();
+        }} />}>
+    </Expandable>
+    <div className='filter-summary' title={'Status: ' + statusLine + '\nProjects: ' + projectsLine} onClick={() => setExpanded(!expanded)}>
+      <span className='filter-label'>Status:</span> {statusLine}
+      <span className='filter-label'>Projects:</span> {projectsLine}
+    </div>
+    {expanded && <div className='hbox' style={{ marginLeft: 14 }}>
+      <div className='filter-list'>
+        {[...statusFilters.entries()].map(([status, value]) => {
+          return <div className='filter-entry'>
+            <label>
+              <input type='checkbox' checked={value} onClick={() => {
+                const copy = new Map(statusFilters);
+                copy.set(status, !copy.get(status));
+                setStatusFilters(copy);
+              }}/>
+              <div>{status}</div>
+            </label>
+          </div>;
+        })}
+      </div>
+      <div className='filter-list'>
+        {[...projectFilters.entries()].map(([projectName, value]) => {
+          return <div className='filter-entry'>
+            <label>
+              <input type='checkbox' checked={value} onClick={() => {
+                const copy = new Map(projectFilters);
+                copy.set(projectName, !copy.get(projectName));
+                setProjectFilters(copy);
+                const configFile = testModel?.config?.configFile;
+                if (configFile)
+                  settings.setObject(configFile + ':projects', [...copy.entries()].filter(([_, v]) => v).map(([k]) => k));
+              }}/>
+              <div>{projectName}</div>
+            </label>
+          </div>;
+        })}
+      </div>
+    </div>}
+  </div>;
+};
+
+const TestTreeView = TreeView<TreeItem>;
+
+const TestList: React.FC<{
+  statusFilters: Map<string, boolean>,
+  projectFilters: Map<string, boolean>,
+  filterText: string,
+  testModel: { rootSuite: Suite | undefined, config: FullConfig | undefined },
+  runTests: (mode: 'bounce-if-busy' | 'queue-if-busy', testIds: Set<string>) => void,
+  runningState?: { testIds: Set<string>, itemSelectedByUser?: boolean },
+  watchAll: boolean,
+  watchedTreeIds: { value: Set<string> },
+  setWatchedTreeIds: (ids: { value: Set<string> }) => void,
+  isLoading?: boolean,
+  setVisibleTestIds: (testIds: Set<string>) => void,
+  onItemSelected: (item: { testCase?: TestCase, location?: Location }) => void,
+}> = ({ statusFilters, projectFilters, filterText, testModel, runTests, runningState, watchAll, watchedTreeIds, setWatchedTreeIds, isLoading, onItemSelected, setVisibleTestIds }) => {
+  const [treeState, setTreeState] = React.useState<TreeState>({ expandedItems: new Map() });
+  const [selectedTreeItemId, setSelectedTreeItemId] = React.useState<string | undefined>();
+
+  // Build the test tree.
+  const { rootItem, treeItemMap, fileNames } = React.useMemo(() => {
+    let rootItem = createTree(testModel.rootSuite, projectFilters);
+    filterTree(rootItem, filterText, statusFilters, runningState?.testIds);
+    sortAndPropagateStatus(rootItem);
+    rootItem = shortenRoot(rootItem);
+
+    hideOnlyTests(rootItem);
+    const treeItemMap = new Map<string, TreeItem>();
+    const visibleTestIds = new Set<string>();
+    const fileNames = new Set<string>();
+    const visit = (treeItem: TreeItem) => {
+      if (treeItem.kind === 'group' && treeItem.location.file)
+        fileNames.add(treeItem.location.file);
+      if (treeItem.kind === 'case')
+        treeItem.tests.forEach(t => visibleTestIds.add(t.id));
+      treeItem.children.forEach(visit);
+      treeItemMap.set(treeItem.id, treeItem);
+    };
+    visit(rootItem);
+    setVisibleTestIds(visibleTestIds);
+    return { rootItem, treeItemMap, fileNames };
+  }, [filterText, testModel, statusFilters, projectFilters, setVisibleTestIds, runningState]);
+
+  // Look for a first failure within the run batch to select it.
+  React.useEffect(() => {
+    if (!runningState || runningState.itemSelectedByUser)
+      return;
+    let selectedTreeItem: TreeItem | undefined;
+    const visit = (treeItem: TreeItem) => {
+      treeItem.children.forEach(visit);
+      if (selectedTreeItem)
+        return;
+      if (treeItem.status === 'failed') {
+        if (treeItem.kind === 'test' && runningState.testIds.has(treeItem.test.id))
+          selectedTreeItem = treeItem;
+        else if (treeItem.kind === 'case' && runningState.testIds.has(treeItem.tests[0]?.id))
+          selectedTreeItem = treeItem;
+      }
+    };
+    visit(rootItem);
+
+    if (selectedTreeItem)
+      setSelectedTreeItemId(selectedTreeItem.id);
+  }, [runningState, setSelectedTreeItemId, rootItem]);
+
+  // Compute selected item.
+  const { selectedTreeItem } = React.useMemo(() => {
+    const selectedTreeItem = selectedTreeItemId ? treeItemMap.get(selectedTreeItemId) : undefined;
+    const location = selectedTreeItem?.location;
+    let selectedTest: TestCase | undefined;
+    if (selectedTreeItem?.kind === 'test')
+      selectedTest = selectedTreeItem.test;
+    else if (selectedTreeItem?.kind === 'case' && selectedTreeItem.tests.length === 1)
+      selectedTest = selectedTreeItem.tests[0];
+    onItemSelected({ testCase: selectedTest, location });
+    return { selectedTreeItem };
+  }, [onItemSelected, selectedTreeItemId, treeItemMap]);
+
+  // Update watch all.
+  React.useEffect(() => {
+    if (watchAll) {
+      sendMessageNoReply('watch', { fileNames: [...fileNames] });
+    } else {
+      const fileNames = new Set<string>();
+      for (const itemId of watchedTreeIds.value) {
+        const treeItem = treeItemMap.get(itemId);
+        const fileName = treeItem?.location.file;
+        if (fileName)
+          fileNames.add(fileName);
+      }
+      sendMessageNoReply('watch', { fileNames: [...fileNames] });
+    }
+  }, [rootItem, fileNames, watchAll, watchedTreeIds, treeItemMap]);
+
+  const runTreeItem = (treeItem: TreeItem) => {
+    setSelectedTreeItemId(treeItem.id);
+    runTests('bounce-if-busy', collectTestIds(treeItem));
+  };
+
+  runWatchedTests = (changedTestFiles: string[]) => {
+    const testIds: string[] = [];
+    const set = new Set(changedTestFiles);
+    if (watchAll) {
+      const visit = (treeItem: TreeItem) => {
+        const fileName = treeItem.location.file;
+        if (fileName && set.has(fileName))
+          testIds.push(...collectTestIds(treeItem));
+        if (treeItem.kind === 'group' && treeItem.subKind === 'folder')
+          treeItem.children.forEach(visit);
+      };
+      visit(rootItem);
+    } else {
+      for (const treeId of watchedTreeIds.value) {
+        const treeItem = treeItemMap.get(treeId);
+        const fileName = treeItem?.location.file;
+        if (fileName && set.has(fileName))
+          testIds.push(...collectTestIds(treeItem));
+      }
+    }
+    runTests('queue-if-busy', new Set(testIds));
+  };
+
+  return <TestTreeView
+    treeState={treeState}
+    setTreeState={setTreeState}
+    rootItem={rootItem}
+    dataTestId='test-tree'
+    render={treeItem => {
+      return <div className='hbox watch-mode-list-item'>
+        <div className='watch-mode-list-item-title'>{treeItem.title}</div>
+        {!!treeItem.duration && treeItem.status !== 'skipped' && <div className='watch-mode-list-item-time'>{msToString(treeItem.duration)}</div>}
+        <Toolbar noMinHeight={true} noShadow={true}>
+          <ToolbarButton icon='play' title='Run' onClick={() => runTreeItem(treeItem)} disabled={!!runningState}></ToolbarButton>
           <ToolbarButton icon='go-to-file' title='Open in VS Code' onClick={() => sendMessageNoReply('open', { location: locationToOpen(treeItem) })}></ToolbarButton>
-        </div>;
-      }}
-      icon={treeItem => {
-        if (treeItem.status === 'running')
-          return 'codicon-loading';
-        if (treeItem.status === 'failed')
-          return 'codicon-error';
-        if (treeItem.status === 'passed')
-          return 'codicon-check';
-        return 'codicon-circle-outline';
-      }}
-      selectedItem={selectedTreeItem}
-      onAccepted={runTreeItem}
-      onSelected={treeItem => {
-        setSelectedTreeItemId(treeItem.id);
-      }}
-      noItemsMessage='No tests' />
-  </div>;
-};
-
-export const SettingsView: React.FC<{
-  projects: Map<string, boolean>,
-  setProjects: (projectNames: Map<string, boolean>) => void,
-  onClose: () => void,
-}> = ({ projects, setProjects, onClose }) => {
-  return <div className='vbox'>
-    <div className='hbox' style={{ flex: 'none' }}>
-      <div className='section-title' style={{ marginTop: 10 }}>Projects</div>
-      <div className='spacer'></div>
-      <ToolbarButton icon='close' title='Close settings' toggled={false} onClick={onClose}></ToolbarButton>
-    </div>
-    {[...projects.entries()].map(([projectName, value]) => {
-      return <div style={{ display: 'flex', alignItems: 'center', lineHeight: '24px' }}>
-        <input id={`project-${projectName}`} type='checkbox' checked={value} style={{ cursor: 'pointer' }} onClick={() => {
-          const copy = new Map(projects);
-          copy.set(projectName, !copy.get(projectName));
-          if (![...copy.values()].includes(true))
-            copy.set(projectName, true);
-          setProjects(copy);
-        }}/>
-        <label htmlFor={`project-${projectName}`} style={{ cursor: 'pointer' }}>
-          {projectName}
-        </label>
+          {!watchAll && <ToolbarButton icon='eye' title='Watch' onClick={() => {
+            if (watchedTreeIds.value.has(treeItem.id))
+              watchedTreeIds.value.delete(treeItem.id);
+            else
+              watchedTreeIds.value.add(treeItem.id);
+            setWatchedTreeIds({ ...watchedTreeIds });
+          }} toggled={watchedTreeIds.value.has(treeItem.id)}></ToolbarButton>}
+        </Toolbar>
       </div>;
-    })}
-    <div className='section-title'>Appearance</div>
-    <div style={{ marginLeft: 3 }}>
-      <ToolbarButton icon='color-mode' title='Toggle color mode' toggled={false} onClick={() => toggleTheme()}>Toggle color mode</ToolbarButton>
-    </div>
-  </div>;
+    }}
+    icon={treeItem => {
+      if (treeItem.status === 'scheduled')
+        return 'codicon-clock';
+      if (treeItem.status === 'running')
+        return 'codicon-loading';
+      if (treeItem.status === 'failed')
+        return 'codicon-error';
+      if (treeItem.status === 'passed')
+        return 'codicon-check';
+      if (treeItem.status === 'skipped')
+        return 'codicon-circle-slash';
+      return 'codicon-circle-outline';
+    }}
+    selectedItem={selectedTreeItem}
+    onAccepted={runTreeItem}
+    onSelected={treeItem => {
+      if (runningState)
+        runningState.itemSelectedByUser = true;
+      setSelectedTreeItemId(treeItem.id);
+    }}
+    autoExpandDeep={!!filterText}
+    noItemsMessage={isLoading ? 'Loading\u2026' : 'No tests'} />;
 };
 
-export const TraceView: React.FC<{
-  test: TestCase | undefined,
-}> = ({ test }) => {
+const TraceView: React.FC<{
+  item: { location?: Location, testCase?: TestCase },
+  rootDir?: string,
+}> = ({ item, rootDir }) => {
   const [model, setModel] = React.useState<MultiTraceModel | undefined>();
-  const [stepsProgress, setStepsProgress] = React.useState(0);
-  updateStepsProgress = () => setStepsProgress(stepsProgress + 1);
+  const [counter, setCounter] = React.useState(0);
+  const pollTimer = React.useRef<NodeJS.Timeout | null>(null);
+
+  const { outputDir, result } = React.useMemo(() => {
+    const outputDir = item.testCase ? outputDirForTestCase(item.testCase) : undefined;
+    const result = item.testCase?.results[0];
+    return { outputDir, result };
+  }, [item]);
+
+  // Preserve user selection upon live-reloading trace model by persisting the action id.
+  // This avoids auto-selection of the last action every time we reload the model.
+  const [selectedActionId, setSelectedActionId] = React.useState<string | undefined>();
+  const onSelectionChanged = React.useCallback((action: ActionTraceEvent) => setSelectedActionId(idForAction(action)), [setSelectedActionId]);
+  const initialSelection = selectedActionId ? model?.actions.find(a => idForAction(a) === selectedActionId) : undefined;
 
   React.useEffect(() => {
-    (async () => {
-      if (!test) {
-        setModel(undefined);
-        return;
-      }
+    if (pollTimer.current)
+      clearTimeout(pollTimer.current);
 
-      const result = test.results?.[0];
-      if (result) {
-        const attachment = result.attachments.find(a => a.name === 'trace');
-        if (attachment && attachment.path)
-          loadSingleTraceFile(attachment.path).then(setModel);
-        else
-          setModel(stepsToModel(result));
-      } else {
-        setModel(undefined);
-      }
-    })();
-  }, [test, stepsProgress]);
+    if (!result) {
+      setModel(undefined);
+      return;
+    }
 
-  const xterm = <XtermWrapper source={xtermDataSource}></XtermWrapper>;
-  return <Workbench model={model} output={xterm} rightToolbar={[
-    <ToolbarButton icon='trash' title='Clear output' onClick={() => xtermDataSource.clear()}></ToolbarButton>,
-  ]}/>;
+    // Test finished.
+    const attachment = result && result.duration >= 0 && result.attachments.find(a => a.name === 'trace');
+    if (attachment && attachment.path) {
+      loadSingleTraceFile(attachment.path).then(model => setModel(model));
+      return;
+    }
+
+    if (!outputDir) {
+      setModel(undefined);
+      return;
+    }
+
+    const traceLocation = `${outputDir}/${artifactsFolderName(result!.workerIndex)}/traces/${item.testCase?.id}.json`;
+    // Start polling running test.
+    pollTimer.current = setTimeout(async () => {
+      try {
+        const model = await loadSingleTraceFile(traceLocation);
+        setModel(model);
+      } catch {
+        setModel(undefined);
+      } finally {
+        setCounter(counter + 1);
+      }
+    }, 250);
+    return () => {
+      if (pollTimer.current)
+        clearTimeout(pollTimer.current);
+    };
+  }, [result, outputDir, item, setModel, counter, setCounter]);
+
+  return <Workbench
+    key='workbench'
+    model={model}
+    hideTimelineBars={true}
+    hideStackFrames={true}
+    showSourcesFirst={true}
+    rootDir={rootDir}
+    initialSelection={initialSelection}
+    onSelectionChanged={onSelectionChanged}
+    defaultSourceLocation={item.location} />;
 };
 
 declare global {
@@ -293,60 +536,78 @@ declare global {
 
 let receiver: TeleReporterReceiver | undefined;
 
-const refreshRootSuite = (eraseResults: boolean) => {
-  if (!eraseResults) {
-    sendMessageNoReply('list');
-    return;
-  }
+let throttleTimer: NodeJS.Timeout | undefined;
+let throttleData: { config: FullConfig, rootSuite: Suite, progress: Progress } | undefined;
+const throttledAction = () => {
+  clearTimeout(throttleTimer);
+  throttleTimer = undefined;
+  updateRootSuite(throttleData!.config, throttleData!.rootSuite, throttleData!.progress);
+};
+
+const throttleUpdateRootSuite = (config: FullConfig, rootSuite: Suite, progress: Progress, immediate = false) => {
+  throttleData = { config, rootSuite, progress };
+  if (immediate)
+    throttledAction();
+  else if (!throttleTimer)
+    throttleTimer = setTimeout(throttledAction, 250);
+};
+
+const refreshRootSuite = (eraseResults: boolean): Promise<void> => {
+  if (!eraseResults)
+    return sendMessage('list', {});
 
   let rootSuite: Suite;
   const progress: Progress = {
-    total: 0,
     passed: 0,
     failed: 0,
+    skipped: 0,
   };
-  receiver = new TeleReporterReceiver({
-    onBegin: (config: FullConfig, suite: Suite) => {
+  let config: FullConfig;
+  receiver = new TeleReporterReceiver(pathSeparator, {
+    onBegin: (c: FullConfig, suite: Suite) => {
       if (!rootSuite)
         rootSuite = suite;
+      config = c;
       progress.passed = 0;
       progress.failed = 0;
-      updateRootSuite(rootSuite, progress);
+      progress.skipped = 0;
+      throttleUpdateRootSuite(config, rootSuite, progress, true);
+    },
+
+    onEnd: () => {
+      throttleUpdateRootSuite(config, rootSuite, progress, true);
     },
 
     onTestBegin: () => {
-      updateRootSuite(rootSuite, progress);
+      throttleUpdateRootSuite(config, rootSuite, progress);
     },
 
     onTestEnd: (test: TestCase) => {
-      if (test.outcome() === 'unexpected')
+      if (test.outcome() === 'skipped')
+        ++progress.skipped;
+      else if (test.outcome() === 'unexpected')
         ++progress.failed;
       else
         ++progress.passed;
-      updateRootSuite(rootSuite, progress);
-      // This will update selected trace viewer.
-      updateStepsProgress();
+      throttleUpdateRootSuite(config, rootSuite, progress);
     },
 
-    onStepBegin: () => {
-      updateStepsProgress();
-    },
-
-    onStepEnd: () => {
-      updateStepsProgress();
+    onError: (error: TestError) => {
+      xtermDataSource.write((error.stack || error.value || '') + '\n');
     },
   });
-  sendMessageNoReply('list');
+  receiver._setClearPreviousResultsWhenTestBegins();
+  return sendMessage('list', {});
 };
 
 (window as any).dispatch = (message: any) => {
   if (message.method === 'listChanged') {
-    refreshRootSuite(false);
+    refreshRootSuite(false).catch(() => {});
     return;
   }
 
-  if (message.method === 'fileChanged') {
-    runWatchedTests();
+  if (message.method === 'testFilesChanged') {
+    runWatchedTests(message.params.testFileNames);
     return;
   }
 
@@ -360,7 +621,7 @@ const refreshRootSuite = (eraseResults: boolean) => {
     return;
   }
 
-  receiver?.dispatch(message);
+  receiver?.dispatch(message)?.catch(() => {});
 };
 
 const sendMessage = async (method: string, params: any) => {
@@ -368,14 +629,22 @@ const sendMessage = async (method: string, params: any) => {
 };
 
 const sendMessageNoReply = (method: string, params?: any) => {
+  if ((window as any)._overrideProtocolForTest) {
+    (window as any)._overrideProtocolForTest({ method, params }).catch(() => {});
+    return;
+  }
   sendMessage(method, params).catch((e: Error) => {
     // eslint-disable-next-line no-console
     console.error(e);
   });
 };
 
-const fileName = (treeItem?: TreeItem): string | undefined => {
-  return treeItem?.location.file;
+const outputDirForTestCase = (testCase: TestCase): string | undefined => {
+  for (let suite: Suite | undefined = testCase.parent; suite; suite = suite.parent) {
+    if (suite.project())
+      return suite.project()?.outputDir;
+  }
+  return undefined;
 };
 
 const locationToOpen = (treeItem?: TreeItem) => {
@@ -384,15 +653,16 @@ const locationToOpen = (treeItem?: TreeItem) => {
   return treeItem.location.file + ':' + treeItem.location.line;
 };
 
-const collectTestIds = (treeItem?: TreeItem): string[] => {
+const collectTestIds = (treeItem?: TreeItem): Set<string> => {
+  const testIds = new Set<string>();
   if (!treeItem)
-    return [];
-  const testIds: string[] = [];
+    return testIds;
+
   const visit = (treeItem: TreeItem) => {
     if (treeItem.kind === 'case')
-      testIds.push(...treeItem.tests.map(t => t.id));
+      treeItem.tests.map(t => t.id).forEach(id => testIds.add(id));
     else if (treeItem.kind === 'test')
-      testIds.push(treeItem.id);
+      testIds.add(treeItem.id);
     else
       treeItem.children?.forEach(visit);
   };
@@ -401,9 +671,9 @@ const collectTestIds = (treeItem?: TreeItem): string[] => {
 };
 
 type Progress = {
-  total: number;
   passed: number;
   failed: number;
+  skipped: number;
 };
 
 type TreeItemBase = {
@@ -411,47 +681,83 @@ type TreeItemBase = {
   id: string;
   title: string;
   location: Location,
+  duration: number;
+  parent: TreeItem | undefined;
   children: TreeItem[];
-  status: 'none' | 'running' | 'passed' | 'failed';
+  status: 'none' | 'running' | 'scheduled' | 'passed' | 'failed' | 'skipped';
 };
 
 type GroupItem = TreeItemBase & {
-  kind: 'group',
+  kind: 'group';
+  subKind: 'folder' | 'file' | 'describe';
   children: (TestCaseItem | GroupItem)[];
 };
 
 type TestCaseItem = TreeItemBase & {
   kind: 'case',
   tests: TestCase[];
+  children: TestItem[];
 };
 
 type TestItem = TreeItemBase & {
   kind: 'test',
   test: TestCase;
+  project: string;
 };
 
 type TreeItem = GroupItem | TestCaseItem | TestItem;
 
-function createTree(rootSuite: Suite | undefined, projects: Map<string, boolean>): GroupItem {
+function getFileItem(rootItem: GroupItem, filePath: string[], isFile: boolean, fileItems: Map<string, GroupItem>): GroupItem {
+  if (filePath.length === 0)
+    return rootItem;
+  const fileName = filePath.join(pathSeparator);
+  const existingFileItem = fileItems.get(fileName);
+  if (existingFileItem)
+    return existingFileItem;
+  const parentFileItem = getFileItem(rootItem, filePath.slice(0, filePath.length - 1), false, fileItems);
+  const fileItem: GroupItem = {
+    kind: 'group',
+    subKind: isFile ? 'file' : 'folder',
+    id: fileName,
+    title: filePath[filePath.length - 1],
+    location: { file: fileName, line: 0, column: 0 },
+    duration: 0,
+    parent: parentFileItem,
+    children: [],
+    status: 'none',
+  };
+  parentFileItem.children.push(fileItem);
+  fileItems.set(fileName, fileItem);
+  return fileItem;
+}
+
+function createTree(rootSuite: Suite | undefined, projectFilters: Map<string, boolean>): GroupItem {
+  const filterProjects = [...projectFilters.values()].some(Boolean);
   const rootItem: GroupItem = {
     kind: 'group',
+    subKind: 'folder',
     id: 'root',
     title: '',
     location: { file: '', line: 0, column: 0 },
+    duration: 0,
+    parent: undefined,
     children: [],
     status: 'none',
   };
 
   const visitSuite = (projectName: string, parentSuite: Suite, parentGroup: GroupItem) => {
     for (const suite of parentSuite.suites) {
-      const title = suite.title;
+      const title = suite.title || '<anonymous>';
       let group = parentGroup.children.find(item => item.title === title) as GroupItem | undefined;
       if (!group) {
         group = {
           kind: 'group',
+          subKind: 'describe',
           id: parentGroup.id + '\x1e' + title,
           title,
           location: suite.location!,
+          duration: 0,
+          parent: parentGroup,
           children: [],
           status: 'none',
         };
@@ -468,20 +774,29 @@ function createTree(rootSuite: Suite | undefined, projects: Map<string, boolean>
           kind: 'case',
           id: parentGroup.id + '\x1e' + title,
           title,
+          parent: parentGroup,
           children: [],
           tests: [],
           location: test.location,
+          duration: 0,
           status: 'none',
         };
         parentGroup.children.push(testCaseItem);
       }
 
-      let status: 'none' | 'running' | 'passed' | 'failed' = 'none';
-      if (test.results.some(r => r.duration === -1))
+      const result = (test as TeleTestCase).results[0];
+      let status: 'none' | 'running' | 'scheduled' | 'passed' | 'failed' | 'skipped' = 'none';
+      if (result?.statusEx === 'scheduled')
+        status = 'scheduled';
+      else if (result?.statusEx === 'running')
         status = 'running';
-      else if (test.results.length && test.outcome() !== 'expected')
+      else if (result?.status === 'skipped')
+        status = 'skipped';
+      else if (result?.status === 'interrupted')
+        status = 'none';
+      else if (result && test.outcome() !== 'expected')
         status = 'failed';
-      else if (test.outcome() === 'expected')
+      else if (result && test.outcome() === 'expected')
         status = 'passed';
 
       testCaseItem.tests.push(test);
@@ -491,53 +806,48 @@ function createTree(rootSuite: Suite | undefined, projects: Map<string, boolean>
         title: projectName,
         location: test.location!,
         test,
+        parent: testCaseItem,
         children: [],
         status,
+        duration: test.results.length ? Math.max(0, test.results[0].duration) : 0,
+        project: projectName,
       });
+      testCaseItem.duration = (testCaseItem.children as TestItem[]).reduce((a, b) => a + b.duration, 0);
     }
   };
 
+  const fileMap = new Map<string, GroupItem>();
   for (const projectSuite of rootSuite?.suites || []) {
-    if (!projects.get(projectSuite.title))
+    if (filterProjects && !projectFilters.get(projectSuite.title))
       continue;
-    visitSuite(projectSuite.title, projectSuite, rootItem);
-  }
-
-  const propagateStatus = (treeItem: TreeItem) => {
-    for (const child of treeItem.children)
-      propagateStatus(child);
-
-    let allPassed = treeItem.children.length > 0;
-    let hasFailed = false;
-    let hasRunning = false;
-
-    for (const child of treeItem.children) {
-      allPassed = allPassed && child.status === 'passed';
-      hasFailed = hasFailed || child.status === 'failed';
-      hasRunning = hasRunning || child.status === 'running';
+    for (const fileSuite of projectSuite.suites) {
+      const fileItem = getFileItem(rootItem, fileSuite.location!.file.split(pathSeparator), true, fileMap);
+      visitSuite(projectSuite.title, fileSuite, fileItem);
     }
-
-    if (hasRunning)
-      treeItem.status = 'running';
-    else if (hasFailed)
-      treeItem.status = 'failed';
-    else if (allPassed)
-      treeItem.status = 'passed';
-  };
-  propagateStatus(rootItem);
+  }
   return rootItem;
 }
 
-function filterTree(rootItem: GroupItem, filterText: string) {
-  const trimmedFilterText = filterText.trim();
-  const filterTokens = trimmedFilterText.toLowerCase().split(' ');
+function filterTree(rootItem: GroupItem, filterText: string, statusFilters: Map<string, boolean>, runningTestIds: Set<string> | undefined) {
+  const tokens = filterText.trim().toLowerCase().split(' ');
+  const filtersStatuses = [...statusFilters.values()].some(Boolean);
+
+  const filter = (testCase: TestCaseItem) => {
+    const title = testCase.tests[0].titlePath().join(' ').toLowerCase();
+    if (!tokens.every(token => title.includes(token)) && !testCase.tests.some(t => runningTestIds?.has(t.id)))
+      return false;
+    testCase.children = (testCase.children as TestItem[]).filter(test => {
+      return !filtersStatuses || runningTestIds?.has(test.id) || statusFilters.get(test.status);
+    });
+    testCase.tests = (testCase.children as TestItem[]).map(c => c.test);
+    return !!testCase.children.length;
+  };
 
   const visit = (treeItem: GroupItem) => {
     const newChildren: (GroupItem | TestCaseItem)[] = [];
     for (const child of treeItem.children) {
       if (child.kind === 'case') {
-        const title = child.tests[0].titlePath().join(' ').toLowerCase();
-        if (filterTokens.every(token => title.includes(token)))
+        if (filter(child))
           newChildren.push(child);
       } else {
         visit(child);
@@ -548,6 +858,51 @@ function filterTree(rootItem: GroupItem, filterText: string) {
     treeItem.children = newChildren;
   };
   visit(rootItem);
+}
+
+function sortAndPropagateStatus(treeItem: TreeItem) {
+  for (const child of treeItem.children)
+    sortAndPropagateStatus(child);
+
+  if (treeItem.kind === 'group') {
+    treeItem.children.sort((a, b) => {
+      const fc = a.location.file.localeCompare(b.location.file);
+      return fc || a.location.line - b.location.line;
+    });
+  }
+
+  let allPassed = treeItem.children.length > 0;
+  let allSkipped = treeItem.children.length > 0;
+  let hasFailed = false;
+  let hasRunning = false;
+  let hasScheduled = false;
+
+  for (const child of treeItem.children) {
+    allSkipped = allSkipped && child.status === 'skipped';
+    allPassed = allPassed && (child.status === 'passed' || child.status === 'skipped');
+    hasFailed = hasFailed || child.status === 'failed';
+    hasRunning = hasRunning || child.status === 'running';
+    hasScheduled = hasScheduled || child.status === 'scheduled';
+  }
+
+  if (hasRunning)
+    treeItem.status = 'running';
+  else if (hasScheduled)
+    treeItem.status = 'scheduled';
+  else if (hasFailed)
+    treeItem.status = 'failed';
+  else if (allSkipped)
+    treeItem.status = 'skipped';
+  else if (allPassed)
+    treeItem.status = 'passed';
+}
+
+function shortenRoot(rootItem: GroupItem): GroupItem {
+  let shortRoot = rootItem;
+  while (shortRoot.children.length === 1 && shortRoot.children[0].kind === 'group' && shortRoot.children[0].subKind === 'folder')
+    shortRoot = shortRoot.children[0];
+  shortRoot.location = rootItem.location;
+  return shortRoot;
 }
 
 function hideOnlyTests(rootItem: GroupItem) {
@@ -568,65 +923,4 @@ async function loadSingleTraceFile(url: string): Promise<MultiTraceModel> {
   return new MultiTraceModel(contextEntries);
 }
 
-function stepsToModel(result: TestResult): MultiTraceModel {
-  let startTime = Number.MAX_VALUE;
-  let endTime = Number.MIN_VALUE;
-  const actions: trace.ActionTraceEvent[] = [];
-
-  const flatSteps: TestStep[] = [];
-  const visit = (step: TestStep) => {
-    flatSteps.push(step);
-    step.steps.forEach(visit);
-  };
-  result.steps.forEach(visit);
-
-  for (const step of flatSteps) {
-    let callId: string;
-    if (step.category === 'pw:api')
-      callId = `call@${actions.length}`;
-    else if (step.category === 'expect')
-      callId = `expect@${actions.length}`;
-    else
-      continue;
-    const action: trace.ActionTraceEvent = {
-      type: 'action',
-      callId,
-      startTime: step.startTime.getTime(),
-      endTime: step.startTime.getTime() + step.duration,
-      apiName: step.title,
-      class: '',
-      method: '',
-      params: {},
-      wallTime: step.startTime.getTime(),
-      log: [],
-      snapshots: [],
-      error: step.error ? { name: 'Error', message: step.error.message || step.error.value || '' } : undefined,
-    };
-    if (startTime > action.startTime)
-      startTime = action.startTime;
-    if (endTime < action.endTime)
-      endTime = action.endTime;
-    actions.push(action);
-  }
-
-  const contextEntry: ContextEntry = {
-    traceUrl: '',
-    startTime,
-    endTime,
-    browserName: '',
-    options: {
-      viewport: undefined,
-      deviceScaleFactor: undefined,
-      isMobile: undefined,
-      userAgent: undefined
-    },
-    pages: [],
-    resources: [],
-    actions,
-    events: [],
-    initializers: {},
-    hasSource: false
-  };
-
-  return new MultiTraceModel([contextEntry]);
-}
+const pathSeparator = navigator.userAgent.toLowerCase().includes('windows') ? '\\' : '/';

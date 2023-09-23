@@ -16,7 +16,9 @@
 
 import { formatLocation } from '../util';
 import * as crypto from 'crypto';
-import type { Fixtures, FixturesWithLocation, Location } from './types';
+import type { Fixtures } from '../../types/test';
+import type { Location } from '../../types/testReporter';
+import type { FixturesWithLocation } from './config';
 
 export type FixtureScope = 'test' | 'worker';
 type FixtureAuto = boolean | 'all-hooks-included';
@@ -243,6 +245,11 @@ function innerFixtureParameterNames(fn: Function, location: Location, onError: L
     const colon = prop.indexOf(':');
     return colon === -1 ? prop.trim() : prop.substring(0, colon).trim();
   });
+  const restProperty = props.find(prop => prop.startsWith('...'));
+  if (restProperty) {
+    onError({ message: `Rest property "${restProperty}" is not supported. List all used fixtures explicitly, separated by comma.`, location });
+    return [];
+  }
   return props;
 }
 

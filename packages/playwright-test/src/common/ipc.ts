@@ -15,7 +15,8 @@
  */
 
 import { serializeCompilationCache } from './compilationCache';
-import type { FullConfigInternal, TestInfoError, TestStatus } from './types';
+import type { FullConfigInternal } from './config';
+import type { TestInfoError, TestStatus } from '../../types/test';
 
 export type ConfigCLIOverrides = {
   forbidOnly?: boolean;
@@ -82,10 +83,9 @@ export type TestEndPayload = {
 export type StepBeginPayload = {
   testId: string;
   stepId: string;
+  parentStepId: string | undefined;
   title: string;
   category: string;
-  canHaveChildren: boolean;
-  forceNoParent: boolean;
   wallTime: number;  // milliseconds since unix epoch
   location?: { file: string, line: number, column: number };
 };
@@ -123,11 +123,13 @@ export type TeardownErrorsPayload = {
   fatalErrors: TestInfoError[];
 };
 
+export type EnvProducedPayload = [string, string | null][];
+
 export function serializeConfig(config: FullConfigInternal): SerializedConfig {
   const result: SerializedConfig = {
-    configFile: config.configFile,
-    configDir: config._internal.configDir,
-    configCLIOverrides: config._internal.configCLIOverrides,
+    configFile: config.config.configFile,
+    configDir: config.configDir,
+    configCLIOverrides: config.configCLIOverrides,
     compilationCache: serializeCompilationCache(),
   };
   return result;

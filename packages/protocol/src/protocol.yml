@@ -448,6 +448,7 @@ ContextOptions:
       properties:
         username: string
         password: string
+        origin: string?
     deviceScaleFactor: number?
     isMobile: boolean?
     hasTouch: boolean?
@@ -500,14 +501,12 @@ LocalUtils:
         entries:
           type: array
           items: NameValue
+        stacksId: string?
         mode:
           type: enum
           literals:
             - write
             - append
-        metadata:
-          type: array
-          items: ClientSideCallMetadata
         includeSources: boolean
 
     harOpen:
@@ -563,6 +562,24 @@ LocalUtils:
         socksProxyRedirectPortForTest: number?
       returns:
         pipe: JsonPipe
+        headers:
+          type: array
+          items: NameValue
+
+    tracingStarted:
+      parameters:
+        tracesDir: string?
+        traceName: string
+      returns:
+        stacksId: string
+
+    addStackToTracingNoReply:
+      parameters:
+        callData: ClientSideCallMetadata
+
+    traceDiscarded:
+      parameters:
+        stacksId: string
 
 Root:
   type: interface
@@ -642,6 +659,7 @@ Playwright:
           properties:
             username: string
             password: string
+            origin: string?
         proxy:
           type: object?
           properties:
@@ -880,6 +898,10 @@ Browser:
 
     killForTests:
 
+    defaultUserAgentForTest:
+      returns:
+        userAgent: string
+
     newContext:
       parameters:
         $mixin: ContextOptions
@@ -1053,6 +1075,7 @@ BrowserContext:
           properties:
             username: string
             password: string
+            origin: string?
 
     setNetworkInterceptionPatterns:
       parameters:
@@ -2277,6 +2300,10 @@ JSHandle:
       returns:
         value: SerializedValue
 
+    objectCount:
+      returns:
+        count: number
+
   events:
 
     previewUpdated:
@@ -2728,6 +2755,7 @@ Route:
     abort:
       parameters:
         errorCode: string?
+        requestUrl: string
 
     continue:
       parameters:
@@ -2737,6 +2765,7 @@ Route:
           type: array?
           items: NameValue
         postData: binary?
+        requestUrl: string
 
     fulfill:
       parameters:
@@ -2748,6 +2777,7 @@ Route:
         body: string?
         isBase64: boolean?
         fetchResponseUid: string?
+        requestUrl: string
 
 ResourceTiming:
   type: object
@@ -2926,7 +2956,10 @@ Tracing:
 
     tracingStartChunk:
       parameters:
+        name: string?
         title: string?
+      returns:
+        traceName: string
 
     tracingStopChunk:
       parameters:
@@ -3070,6 +3103,7 @@ Electron:
           properties:
             username: string
             password: string
+            origin: string?
         ignoreHTTPSErrors: boolean?
         locale: string?
         offline: boolean?

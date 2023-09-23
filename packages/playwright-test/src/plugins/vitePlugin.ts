@@ -23,11 +23,10 @@ import { parse, traverse, types as t } from '../common/babelBundle';
 import { stoppable } from '../utilsBundle';
 import type { ComponentInfo } from '../common/tsxTransform';
 import { collectComponentUsages, componentInfo } from '../common/tsxTransform';
-import type { FullConfig } from '../common/types';
 import { assert, calculateSha1 } from 'playwright-core/lib/utils';
 import type { AddressInfo } from 'net';
 import { getPlaywrightVersion } from 'playwright-core/lib/utils';
-import type { PlaywrightTestConfig as BasePlaywrightTestConfig } from '@playwright/test';
+import type { PlaywrightTestConfig as BasePlaywrightTestConfig, FullConfig } from '@playwright/test';
 import type { PluginContext } from 'rollup';
 import { setExternalDependencies } from '../common/compilationCache';
 
@@ -41,7 +40,7 @@ type CtConfig = BasePlaywrightTestConfig['use'] & {
   ctViteConfig?: InlineConfig | (() => Promise<InlineConfig>);
 };
 
-const importReactRE = /(^|\n)import\s+(\*\s+as\s+)?React(,|\s+)/;
+const importReactRE = /(^|\n|;)import\s+(\*\s+as\s+)?React(,|\s+)/;
 const compiledReactRE = /(const|var)\s+React\s*=/;
 
 export function createPlugin(
@@ -104,9 +103,6 @@ export function createPlugin(
 
       viteConfig.root = rootDir;
       viteConfig.preview = { port, ...viteConfig.preview };
-      viteConfig.build = {
-        outDir
-      };
 
       // React heuristic. If we see a component in a file with .js extension,
       // consider it a potential JSX-in-JS scenario and enable JSX loader for all
@@ -138,6 +134,7 @@ export function createPlugin(
       viteConfig.css.devSourcemap = true;
       viteConfig.build = {
         ...viteConfig.build,
+        outDir,
         target: 'esnext',
         minify: false,
         rollupOptions: {
@@ -307,8 +304,9 @@ function vitePlugin(registerSource: string, relativeTemplateDir: string, buildIn
       const indexTs = path.join(relativeTemplateDir, 'index.ts');
       const indexTsx = path.join(relativeTemplateDir, 'index.tsx');
       const indexJs = path.join(relativeTemplateDir, 'index.js');
+      const indexJsx = path.join(relativeTemplateDir, 'index.jsx');
       const idResolved = path.resolve(id);
-      if (!idResolved.endsWith(indexTs) && !idResolved.endsWith(indexTsx) && !idResolved.endsWith(indexJs))
+      if (!idResolved.endsWith(indexTs) && !idResolved.endsWith(indexTsx) && !idResolved.endsWith(indexJs) && !idResolved.endsWith(indexJsx))
         return;
 
       const folder = path.dirname(id);
@@ -323,7 +321,7 @@ function vitePlugin(registerSource: string, relativeTemplateDir: string, buildIn
           lines.push(`import ${alias} from '${importPath}';`);
       }
 
-      lines.push(`register({ ${[...componentRegistry.keys()].join(',\n  ')} });`);
+      lines.push(`pwRegister({ ${[...componentRegistry.keys()].join(',\n  ')} });`);
       return {
         code: lines.join('\n'),
         map: { mappings: '' }

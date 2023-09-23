@@ -19,11 +19,18 @@ import type { ResourceSnapshot } from '@trace/snapshot';
 import type * as trace from '@trace/trace';
 import type { ActionTraceEvent, EventTraceEvent } from '@trace/trace';
 import type { ContextEntry, PageEntry } from '../entries';
+import type { SerializedError, StackFrame } from '@protocol/channels';
 
 const contextSymbol = Symbol('context');
-const nextSymbol = Symbol('next');
+const nextInContextSymbol = Symbol('next');
+const prevInListSymbol = Symbol('prev');
 const eventsSymbol = Symbol('events');
 const resourcesSymbol = Symbol('resources');
+
+export type SourceModel = {
+  errors: { error: SerializedError['error'], location: StackFrame }[];
+  content: string | undefined;
+};
 
 export class MultiTraceModel {
   readonly startTime: number;
@@ -39,6 +46,8 @@ export class MultiTraceModel {
   readonly hasSource: boolean;
   readonly sdkLanguage: Language | undefined;
   readonly testIdAttributeName: string | undefined;
+  readonly sources: Map<string, SourceModel>;
+
 
   constructor(contexts: ContextEntry[]) {
     contexts.forEach(contextEntry => indexModel(contextEntry));
@@ -57,9 +66,9 @@ export class MultiTraceModel {
     this.events = ([] as EventTraceEvent[]).concat(...contexts.map(c => c.events));
     this.hasSource = contexts.some(c => c.hasSource);
 
-    this.actions.sort((a1, a2) => a1.startTime - a2.startTime);
     this.events.sort((a1, a2) => a1.time - a2.time);
-    this.actions = dedupeActions(this.actions);
+    this.actions = dedupeAndSortActions(this.actions);
+    this.sources = collectSources(this.actions);
   }
 }
 
@@ -69,13 +78,13 @@ function indexModel(context: ContextEntry) {
   for (let i = 0; i < context.actions.length; ++i) {
     const action = context.actions[i] as any;
     action[contextSymbol] = context;
-    action[nextSymbol] = context.actions[i + 1];
+    action[nextInContextSymbol] = context.actions[i + 1];
   }
   for (const event of context.events)
     (event as any)[contextSymbol] = context;
 }
 
-function dedupeActions(actions: ActionTraceEvent[]) {
+function dedupeAndSortActions(actions: ActionTraceEvent[]) {
   const callActions = actions.filter(a => a.callId.startsWith('call@'));
   const expectActions = actions.filter(a => a.callId.startsWith('expect@'));
 
@@ -105,15 +114,26 @@ function dedupeActions(actions: ActionTraceEvent[]) {
     result.push(expectAction);
   }
 
-  return result.sort((a1, a2) => a1.startTime - a2.startTime);
+  result.sort((a1, a2) => (a1.wallTime - a2.wallTime));
+  for (let i = 1; i < result.length; ++i)
+    (result[i] as any)[prevInListSymbol] = result[i - 1];
+  return result;
+}
+
+export function idForAction(action: ActionTraceEvent) {
+  return `${action.pageId || 'none'}:${action.callId}`;
 }
 
 export function context(action: ActionTraceEvent): ContextEntry {
   return (action as any)[contextSymbol];
 }
 
-function next(action: ActionTraceEvent): ActionTraceEvent {
-  return (action as any)[nextSymbol];
+function nextInContext(action: ActionTraceEvent): ActionTraceEvent {
+  return (action as any)[nextInContextSymbol];
+}
+
+export function prevInList(action: ActionTraceEvent): ActionTraceEvent {
+  return (action as any)[prevInListSymbol];
 }
 
 export function stats(action: ActionTraceEvent): { errors: number, warnings: number } {
@@ -140,7 +160,7 @@ export function eventsForAction(action: ActionTraceEvent): EventTraceEvent[] {
   if (result)
     return result;
 
-  const nextAction = next(action);
+  const nextAction = nextInContext(action);
   result = context(action).events.filter(event => {
     return event.time >= action.startTime && (!nextAction || event.time < nextAction.startTime);
   });
@@ -153,10 +173,26 @@ export function resourcesForAction(action: ActionTraceEvent): ResourceSnapshot[]
   if (result)
     return result;
 
-  const nextAction = next(action);
+  const nextAction = nextInContext(action);
   result = context(action).resources.filter(resource => {
     return typeof resource._monotonicTime === 'number' && resource._monotonicTime > action.startTime && (!nextAction || resource._monotonicTime < nextAction.startTime);
   });
   (action as any)[resourcesSymbol] = result;
+  return result;
+}
+
+function collectSources(actions: trace.ActionTraceEvent[]): Map<string, SourceModel> {
+  const result = new Map<string, SourceModel>();
+  for (const action of actions) {
+    for (const frame of action.stack || []) {
+      let source = result.get(frame.file);
+      if (!source) {
+        source = { errors: [], content: undefined };
+        result.set(frame.file, source);
+      }
+    }
+    if (action.error && action.stack?.[0])
+      result.get(action.stack[0].file)!.errors.push({ error: action.error, location: action.stack?.[0] });
+  }
   return result;
 }

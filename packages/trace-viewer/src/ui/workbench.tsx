@@ -30,40 +30,96 @@ import type { TabbedPaneTabModel } from '@web/components/tabbedPane';
 import { Timeline } from './timeline';
 import './workbench.css';
 import { MetadataView } from './metadataView';
+import type { Location } from '../../../playwright-test/types/testReporter';
 
 export const Workbench: React.FunctionComponent<{
   model?: MultiTraceModel,
-  output?: React.ReactElement,
-  rightToolbar?: React.ReactElement[],
-}> = ({ model, output, rightToolbar }) => {
-  const [selectedAction, setSelectedAction] = React.useState<ActionTraceEvent | undefined>();
+  hideTimelineBars?: boolean,
+  hideStackFrames?: boolean,
+  showSourcesFirst?: boolean,
+  rootDir?: string,
+  defaultSourceLocation?: Location,
+  initialSelection?: ActionTraceEvent,
+  onSelectionChanged?: (action: ActionTraceEvent) => void,
+}> = ({ model, hideTimelineBars, hideStackFrames, showSourcesFirst, rootDir, defaultSourceLocation, initialSelection, onSelectionChanged }) => {
+  const [selectedAction, setSelectedAction] = React.useState<ActionTraceEvent | undefined>(undefined);
   const [highlightedAction, setHighlightedAction] = React.useState<ActionTraceEvent | undefined>();
   const [selectedNavigatorTab, setSelectedNavigatorTab] = React.useState<string>('actions');
-  const [selectedPropertiesTab, setSelectedPropertiesTab] = React.useState<string>(output ? 'output' : 'call');
+  const [selectedPropertiesTab, setSelectedPropertiesTab] = React.useState<string>(showSourcesFirst ? 'source' : 'call');
   const activeAction = model ? highlightedAction || selectedAction : undefined;
+
+  const sources = React.useMemo(() => model?.sources || new Map(), [model]);
+
+  React.useEffect(() => {
+    if (selectedAction && model?.actions.includes(selectedAction))
+      return;
+    const failedAction = model?.actions.find(a => a.error);
+    if (initialSelection && model?.actions.includes(initialSelection))
+      setSelectedAction(initialSelection);
+    else if (failedAction)
+      setSelectedAction(failedAction);
+    else if (model?.actions.length)
+      setSelectedAction(model.actions[model.actions.length - 1]);
+  }, [model, selectedAction, setSelectedAction, setSelectedPropertiesTab, initialSelection]);
+
+  const onActionSelected = React.useCallback((action: ActionTraceEvent) => {
+    setSelectedAction(action);
+    onSelectionChanged?.(action);
+  }, [setSelectedAction, onSelectionChanged]);
 
   const { errors, warnings } = activeAction ? modelUtil.stats(activeAction) : { errors: 0, warnings: 0 };
   const consoleCount = errors + warnings;
   const networkCount = activeAction ? modelUtil.resourcesForAction(activeAction).length : 0;
   const sdkLanguage = model?.sdkLanguage || 'javascript';
 
-  const tabs: TabbedPaneTabModel[] = [
-    { id: 'call', title: 'Call', render: () => <CallTab action={activeAction} sdkLanguage={sdkLanguage} /> },
-    { id: 'console', title: 'Console', count: consoleCount, render: () => <ConsoleTab action={activeAction} /> },
-    { id: 'network', title: 'Network', count: networkCount, render: () => <NetworkTab action={activeAction} /> },
-    { id: 'source', title: 'Source', count: 0, render: () => <SourceTab action={activeAction} /> },
-  ];
+  const callTab: TabbedPaneTabModel = {
+    id: 'call',
+    title: showSourcesFirst ? 'Log' : 'Call',
+    render: () => <CallTab action={activeAction} sdkLanguage={sdkLanguage} />
+  };
+  const sourceTab: TabbedPaneTabModel = {
+    id: 'source',
+    title: 'Source',
+    render: () => <SourceTab
+      action={activeAction}
+      sources={sources}
+      hideStackFrames={hideStackFrames}
+      rootDir={rootDir}
+      fallbackLocation={defaultSourceLocation} />
+  };
+  const consoleTab: TabbedPaneTabModel = {
+    id: 'console',
+    title: 'Console',
+    count: consoleCount,
+    render: () => <ConsoleTab action={activeAction} />
+  };
+  const networkTab: TabbedPaneTabModel = {
+    id: 'network',
+    title: 'Network',
+    count: networkCount,
+    render: () => <NetworkTab action={activeAction} />
+  };
 
-  if (output)
-    tabs.unshift({ id: 'output', title: 'Output', component: output });
+  const tabs: TabbedPaneTabModel[] = showSourcesFirst ? [
+    sourceTab,
+    consoleTab,
+    networkTab,
+    callTab,
+  ] : [
+    callTab,
+    consoleTab,
+    networkTab,
+    sourceTab,
+  ];
 
   return <div className='vbox'>
     <Timeline
       model={model}
       selectedAction={activeAction}
-      onSelected={action => setSelectedAction(action)}
+      onSelected={onActionSelected}
+      hideTimelineBars={hideTimelineBars}
     />
-    <SplitView sidebarSize={output ? 250 : 350} orientation={output ? 'vertical' : 'horizontal'}>
+    <SplitView sidebarSize={250} orientation='vertical'>
       <SplitView sidebarSize={250} orientation='horizontal' sidebarIsFirst={true}>
         <SnapshotTab action={activeAction} sdkLanguage={sdkLanguage} testIdAttributeName={model?.testIdAttributeName || 'data-testid'} />
         <TabbedPane tabs={
@@ -76,12 +132,8 @@ export const Workbench: React.FunctionComponent<{
                 sdkLanguage={sdkLanguage}
                 actions={model?.actions || []}
                 selectedAction={model ? selectedAction : undefined}
-                onSelected={action => {
-                  setSelectedAction(action);
-                }}
-                onHighlighted={action => {
-                  setHighlightedAction(action);
-                }}
+                onSelected={onActionSelected}
+                onHighlighted={setHighlightedAction}
                 revealConsole={() => setSelectedPropertiesTab('console')}
               />
             },
@@ -94,7 +146,7 @@ export const Workbench: React.FunctionComponent<{
           ]
         } selectedTab={selectedNavigatorTab} setSelectedTab={setSelectedNavigatorTab}/>
       </SplitView>
-      <TabbedPane tabs={tabs} selectedTab={selectedPropertiesTab} setSelectedTab={setSelectedPropertiesTab} rightToolbar={rightToolbar}/>
+      <TabbedPane tabs={tabs} selectedTab={selectedPropertiesTab} setSelectedTab={setSelectedPropertiesTab} />
     </SplitView>
   </div>;
 };

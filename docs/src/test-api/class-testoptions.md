@@ -6,23 +6,8 @@ Playwright Test provides many options to configure test environment, [Browser], 
 
 These options are usually provided in the [configuration file](../test-configuration.md) through [`property: TestConfig.use`] and [`property: TestProject.use`].
 
-```js tab=js-js
-// @ts-check
-
-const { defineConfig } = require('@playwright/test');
-
-module.exports = defineConfig({
-  use: {
-    headless: false,
-    viewport: { width: 1280, height: 720 },
-    ignoreHTTPSErrors: true,
-    video: 'on-first-retry',
-  },
-});
-```
-
-```js tab=js-ts
-import type { PlaywrightTestConfig } from '@playwright/test';
+```js
+import { defineConfig } from '@playwright/test';
 export default defineConfig({
   use: {
     headless: false,
@@ -35,19 +20,7 @@ export default defineConfig({
 
 Alternatively, with [`method: Test.use`] you can override some options for a file.
 
-```js tab=js-js
-// example.spec.js
-const { test, expect } = require('@playwright/test');
-
-// Run tests in this file with portrait-like viewport.
-test.use({ viewport: { width: 600, height: 900 } });
-
-test('my portrait test', async ({ page }) => {
-  // ...
-});
-```
-
-```js tab=js-ts
+```js
 // example.spec.ts
 import { test, expect } from '@playwright/test';
 
@@ -71,20 +44,7 @@ test('my portrait test', async ({ page }) => {
 
 Name of the browser that runs tests. Defaults to `'chromium'`. Most of the time you should set `browserName` in your [TestConfig]:
 
-```js tab=js-js
-// playwright.config.js
-// @ts-check
-
-const { defineConfig } = require('@playwright/test');
-
-module.exports = defineConfig({
-  use: {
-    browserName: 'firefox',
-  },
-});
-```
-
-```js tab=js-ts
+```js
 // playwright.config.ts
 import { defineConfig, devices } from '@playwright/test';
 
@@ -212,7 +172,7 @@ Custom attribute to be used in [`method: Page.getByTestId`]. `data-testid` is us
 ## property: TestOptions.trace
 * since: v1.10
 - type: <[Object]|[TraceMode]<"off"|"on"|"retain-on-failure"|"on-first-retry">>
-  - `mode` <[TraceMode]<"off"|"on"|"retain-on-failure"|"on-first-retry">> Trace recording mode.
+  - `mode` <[TraceMode]<"off"|"on"|"retain-on-failure"|"on-first-retry"|"on-all-retries">> Trace recording mode.
   - `screenshots` ?<[boolean]> Whether to capture screenshots during tracing. Screenshots are used to build a timeline preview. Defaults to true. Optional.
   - `snapshots` ?<[boolean]> Whether to capture DOM snapshot on every action. Defaults to true. Optional.
   - `sources` ?<[boolean]> Whether to include source files for trace actions. Defaults to true. Optional.
@@ -222,6 +182,7 @@ Whether to record trace for each test. Defaults to `'off'`.
 * `'on'`: Record trace for each test.
 * `'retain-on-failure'`: Record trace for each test, but remove all traces from successful test runs.
 * `'on-first-retry'`: Record trace only when retrying a test for the first time.
+* `'on-all-retries'`: Record traces only when retrying for all retries.
 
 For more control, pass an object that specifies `mode` and trace features to enable.
 

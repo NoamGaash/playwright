@@ -72,7 +72,8 @@ body {
   min-height: 0;
 }
 
-*[hidden] {
+*[hidden],
+.hidden {
   display: none !important;
 }
 
@@ -138,4 +139,18 @@ body.dark-mode ::-webkit-scrollbar-thumb:hover {
 
 body.dark-mode ::-webkit-scrollbar-track:hover {
   background-color: #444;
+}
+
+.codicon-loading {
+  animation: spin 1s infinite linear;
+}
+
+::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
 }

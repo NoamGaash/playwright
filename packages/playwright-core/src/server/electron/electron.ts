@@ -70,8 +70,9 @@ export class ElectronApplication extends SdkObject {
     this._nodeElectronHandlePromise = new Promise(f => {
       this._nodeSession.on('Runtime.executionContextCreated', async (event: any) => {
         if (event.context.auxData && event.context.auxData.isDefault) {
-          this._nodeExecutionContext = new js.ExecutionContext(this, new CRExecutionContext(this._nodeSession, event.context));
-          f(await js.evaluate(this._nodeExecutionContext, false /* returnByValue */, `process.mainModule.require('electron')`));
+          this._nodeExecutionContext = new js.ExecutionContext(this, new CRExecutionContext(this._nodeSession, event.context), 'electron');
+          const source = `process.mainModule.require('electron')`;
+          f(await this._nodeExecutionContext.rawEvaluateHandle(source).then(objectId => new js.JSHandle(this._nodeExecutionContext!, 'object', 'ElectronModule', objectId)));
         }
       });
     });
@@ -130,7 +131,7 @@ export class Electron extends SdkObject {
     controller.setLogName('browser');
     return controller.run(async progress => {
       let app: ElectronApplication | undefined = undefined;
-      const electronArguments = ['-r', require.resolve('./loader'), '--inspect=0', '--remote-debugging-port=0', ...args];
+      const electronArguments = ['--inspect=0', '--remote-debugging-port=0', ...args];
 
       if (os.platform() === 'linux') {
         const runningAsRoot = process.geteuid && process.geteuid() === 0;
@@ -160,6 +161,9 @@ export class Electron extends SdkObject {
           }
           throw error;
         }
+        // Only use our own loader for non-packaged apps.
+        // Packaged apps might have their own command line handling.
+        electronArguments.unshift('-r', require.resolve('./loader'));
       }
 
       // When debugging Playwright test that runs Electron, NODE_OPTIONS

@@ -18,7 +18,7 @@ import path from 'path';
 import fs from 'fs';
 import { sourceMapSupport, pirates } from '../utilsBundle';
 import url from 'url';
-import type { Location } from './types';
+import type { Location } from '../../types/testReporter';
 import type { TsConfigLoaderResult } from '../third_party/tsconfig-loader';
 import { tsConfigLoader } from '../third_party/tsconfig-loader';
 import Module from 'module';
@@ -145,7 +145,6 @@ export function js2ts(resolved: string): string | undefined {
 }
 
 export function transformHook(code: string, filename: string, moduleUrl?: string): string {
-  // If we are not TypeScript and there is no applicable preprocessor - bail out.
   const { cachedCode, addToCache } = getFromCompilationCache(filename, code, moduleUrl);
   if (cachedCode)
     return cachedCode;

@@ -41,6 +41,7 @@ import type { ScreenshotOptions } from './screenshotter';
 import type { InputFilesItems } from './dom';
 import { asLocator } from '../utils/isomorphic/locatorGenerators';
 import { FrameSelectors } from './frameSelectors';
+import { TimeoutError } from '../common/errors';
 
 type ContextData = {
   contextPromise: ManualPromise<dom.FrameExecutionContext | Error>;
@@ -787,8 +788,11 @@ export class Frame extends SdkObject {
       const promise = this.retryWithProgressAndTimeouts(progress, [0, 20, 50, 100, 100, 500], async continuePolling => {
         const resolved = await this.selectors.resolveInjectedForSelector(selector, options, scope);
         progress.throwIfAborted();
-        if (!resolved)
+        if (!resolved) {
+          if (state === 'hidden' || state === 'detached')
+            return null;
           return continuePolling;
+        }
         const result = await resolved.injected.evaluateHandle((injected, { info, root }) => {
           const elements = injected.querySelectorAll(info.parsed, root || document);
           const element: Element | undefined  = elements[0];
@@ -1378,9 +1382,10 @@ export class Frame extends SdkObject {
   private async _expectInternal(metadata: CallMetadata, selector: string, options: FrameExpectParams, oneShot: boolean, timeout: number, lastIntermediateResult: { received?: any, isSet: boolean }): Promise<{ matches: boolean, received?: any, log?: string[], timedOut?: boolean }> {
     const controller = new ProgressController(metadata, this);
     return controller.run(async progress => {
-      if (oneShot)
+      if (oneShot) {
         progress.log(`${metadata.apiName}${timeout ? ` with timeout ${timeout}ms` : ''}`);
-      progress.log(`waiting for ${this._asLocator(selector)}`);
+        progress.log(`waiting for ${this._asLocator(selector)}`);
+      }
       return await this.retryWithProgressAndTimeouts(progress, [100, 250, 500, 1000], async continuePolling => {
         const selectorInFrame = await this.selectors.resolveFrameForSelector(selector, { strict: true });
         progress.throwIfAborted();
@@ -1391,7 +1396,7 @@ export class Frame extends SdkObject {
         const injected = await context.injectedScript();
         progress.throwIfAborted();
 
-        const { log, matches, received, missingRecevied } = await injected.evaluate(async (injected, { info, options, snapshotName }) => {
+        const { log, matches, received, missingRecevied } = await injected.evaluate(async (injected, { info, options, callId }) => {
           const elements = info ? injected.querySelectorAll(info.parsed, document) : [];
           const isArray = options.expression === 'to.have.count' || options.expression.endsWith('.array');
           let log = '';
@@ -1401,10 +1406,10 @@ export class Frame extends SdkObject {
             throw injected.strictModeViolationError(info!.parsed, elements);
           else if (elements.length)
             log = `  locator resolved to ${injected.previewNode(elements[0])}`;
-          if (snapshotName)
-            injected.markTargetElements(new Set(elements), snapshotName);
+          if (callId)
+            injected.markTargetElements(new Set(elements), callId);
           return { log, ...(await injected.expect(elements[0], options, elements)) };
-        }, { info, options, snapshotName: progress.metadata.afterSnapshot });
+        }, { info, options, callId: metadata.id });
 
         if (log)
           progress.log(log);
@@ -1431,7 +1436,7 @@ export class Frame extends SdkObject {
       const result: { matches: boolean, received?: any, log?: string[], timedOut?: boolean } = { matches: options.isNot, log: metadata.log };
       if (lastIntermediateResult.isSet)
         result.received = lastIntermediateResult.received;
-      else
+      if (e instanceof TimeoutError)
         result.timedOut = true;
       return result;
     });
@@ -1552,16 +1557,16 @@ export class Frame extends SdkObject {
         progress.throwIfAborted();
         if (!resolved)
           return continuePolling;
-        const { log, success, value } = await resolved.injected.evaluate((injected, { info, callbackText, taskData, snapshotName }) => {
+        const { log, success, value } = await resolved.injected.evaluate((injected, { info, callbackText, taskData, callId }) => {
           const callback = injected.eval(callbackText) as ElementCallback<T, R>;
           const element = injected.querySelector(info.parsed, document, info.strict);
           if (!element)
             return { success: false };
           const log = `  locator resolved to ${injected.previewNode(element)}`;
-          if (snapshotName)
-            injected.markTargetElements(new Set([element]), snapshotName);
+          if (callId)
+            injected.markTargetElements(new Set([element]), callId);
           return { log, success: true, value: callback(injected, element, taskData as T) };
-        }, { info: resolved.info, callbackText, taskData, snapshotName: progress.metadata.afterSnapshot });
+        }, { info: resolved.info, callbackText, taskData, callId: progress.metadata.id });
 
         if (log)
           progress.log(log);

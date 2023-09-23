@@ -157,6 +157,23 @@ it('should support locator.filter', async ({ page, trace }) => {
     has: page.locator('span'),
     hasText: 'world',
   })).toHaveCount(1);
+  await expect(page.locator(`div`).filter({ hasNot: page.locator('span', { hasText: 'world' }) })).toHaveCount(1);
+  await expect(page.locator(`div`).filter({ hasNot: page.locator('section') })).toHaveCount(2);
+  await expect(page.locator(`div`).filter({ hasNot: page.locator('span') })).toHaveCount(0);
+  await expect(page.locator(`div`).filter({ hasNotText: 'hello' })).toHaveCount(1);
+  await expect(page.locator(`div`).filter({ hasNotText: 'foo' })).toHaveCount(2);
+});
+
+it('should support locator.or', async ({ page }) => {
+  await page.setContent(`<div>hello</div><span>world</span>`);
+  await expect(page.locator('div').or(page.locator('span'))).toHaveCount(2);
+  await expect(page.locator('div').or(page.locator('span'))).toHaveText(['hello', 'world']);
+  await expect(page.locator('span').or(page.locator('article')).or(page.locator('div'))).toHaveText(['hello', 'world']);
+  await expect(page.locator('article').or(page.locator('someting'))).toHaveCount(0);
+  await expect(page.locator('article').or(page.locator('div'))).toHaveText('hello');
+  await expect(page.locator('article').or(page.locator('span'))).toHaveText('world');
+  await expect(page.locator('div').or(page.locator('article'))).toHaveText('hello');
+  await expect(page.locator('span').or(page.locator('article'))).toHaveText('world');
 });
 
 it('should enforce same frame for has/leftOf/rightOf/above/below/near', async ({ page, server }) => {

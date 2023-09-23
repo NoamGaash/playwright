@@ -108,11 +108,11 @@ export function serverSideCallMetadata(): CallMetadata {
     id: '',
     startTime: 0,
     endTime: 0,
+    wallTime: Date.now(),
     type: 'Internal',
     method: '',
     params: {},
     log: [],
-    snapshots: [],
     isServerSide: true,
   };
 }

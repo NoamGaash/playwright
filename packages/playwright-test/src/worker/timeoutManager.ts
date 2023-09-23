@@ -16,7 +16,8 @@
 
 import { colors } from 'playwright-core/lib/utilsBundle';
 import { TimeoutRunner, TimeoutRunnerError } from 'playwright-core/lib/utils';
-import type { Location, TestInfoError } from '../common/types';
+import type { TestInfoError } from '../../types/test';
+import type { Location } from '../../types/testReporter';
 
 export type TimeSlot = {
   timeout: number;
@@ -31,6 +32,7 @@ type RunnableDescription = {
 
 export type FixtureDescription = {
   title: string;
+  phase: 'setup' | 'teardown';
   location?: Location;
   slot?: TimeSlot;  // Falls back to current runnable slot.
 };
@@ -113,8 +115,18 @@ export class TimeoutManager {
     const timeout = this._currentSlot().timeout;
     switch (this._runnable.type) {
       case 'test': {
-        const fixtureSuffix = this._fixture ? ` while ${this._fixture.title}` : '';
-        message = `Test timeout of ${timeout}ms exceeded${fixtureSuffix}.`;
+        if (this._fixture) {
+          if (this._fixture.phase === 'setup') {
+            message = `Test timeout of ${timeout}ms exceeded while setting up "${this._fixture.title}".`;
+          } else {
+            message = [
+              `Test finished within timeout of ${timeout}ms, but tearing down "${this._fixture.title}" ran out of time.`,
+              `Please allow more time for the test, since teardown is attributed towards the test timeout budget.`,
+            ].join('\n');
+          }
+        } else {
+          message = `Test timeout of ${timeout}ms exceeded.`;
+        }
         break;
       }
       case 'afterEach':
@@ -126,8 +138,10 @@ export class TimeoutManager {
         message = `"${this._runnable.type}" hook timeout of ${timeout}ms exceeded.`;
         break;
       case 'teardown': {
-        const fixtureSuffix = this._fixture ? ` while ${this._fixture.title}` : '';
-        message = `Worker teardown timeout of ${timeout}ms exceeded${fixtureSuffix}.`;
+        if (this._fixture)
+          message = `Worker teardown timeout of ${timeout}ms exceeded while ${this._fixture.phase === 'setup' ? 'setting up' : 'tearing down'} "${this._fixture.title}".`;
+        else
+          message = `Worker teardown timeout of ${timeout}ms exceeded.`;
         break;
       }
       case 'skip':
@@ -139,7 +153,7 @@ export class TimeoutManager {
     }
     const fixtureWithSlot = this._fixture?.slot ? this._fixture : undefined;
     if (fixtureWithSlot)
-      message = `${fixtureWithSlot.title} timeout of ${timeout}ms exceeded.`;
+      message = `Fixture "${fixtureWithSlot.title}" timeout of ${timeout}ms exceeded during ${fixtureWithSlot.phase}.`;
     message = colors.red(message);
     const location = (fixtureWithSlot || this._runnable).location;
     return {

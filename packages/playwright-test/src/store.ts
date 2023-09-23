@@ -16,12 +16,11 @@
 
 import fs from 'fs';
 import path from 'path';
-import type { TestStore } from '../types/test';
 import { currentConfig } from './common/globals';
 import { mime } from 'playwright-core/lib/utilsBundle';
 import { isJsonMimeType, isString, isTextualMimeType } from 'playwright-core/lib/utils';
 
-class JsonStore implements TestStore {
+class JsonStore {
   async delete(name: string) {
     const file = this.path(name);
     await fs.promises.rm(file, { force: true });
@@ -50,7 +49,7 @@ class JsonStore implements TestStore {
     const config = currentConfig();
     if (!config)
       throw new Error('Cannot access store before config is loaded');
-    return config._internal.storeDir;
+    return config.storeDir;
   }
 
   async set<T>(name: string, value: T | undefined) {

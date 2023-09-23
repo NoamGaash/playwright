@@ -246,7 +246,7 @@ export class DispatcherConnection {
     const sdkObject = dispatcher._object instanceof SdkObject ? dispatcher._object : undefined;
     const callMetadata: CallMetadata = {
       id: `call@${id}`,
-      wallTime: validMetadata.wallTime,
+      wallTime: validMetadata.wallTime || Date.now(),
       location: validMetadata.location,
       apiName: validMetadata.apiName,
       internal: validMetadata.internal,
@@ -259,7 +259,6 @@ export class DispatcherConnection {
       method,
       params: params || {},
       log: [],
-      snapshots: []
     };
 
     if (sdkObject && params?.info?.waitId) {

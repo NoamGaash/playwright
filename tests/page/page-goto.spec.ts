@@ -300,9 +300,7 @@ it('should throw if networkidle2 is passed as an option', async ({ page, server 
 it('should fail when main resources failed to load', async ({ page, browserName, isWindows, mode }) => {
   let error = null;
   await page.goto('http://localhost:44123/non-existing-url').catch(e => error = e);
-  if (mode === 'service')
-    expect(error.message).toContain('net::ERR_SOCKS_CONNECTION_FAILED');
-  else if (browserName === 'chromium')
+  if (browserName === 'chromium')
     expect(error.message).toContain('net::ERR_CONNECTION_REFUSED');
   else if (browserName === 'webkit' && isWindows)
     expect(error.message).toContain(`Couldn\'t connect to server`);
@@ -418,6 +416,97 @@ it('should fail when replaced by another navigation', async ({ page, server, bro
     expect(error.message.includes('Navigation interrupted by another one') || error.message.includes('NS_BINDING_ABORTED')).toBe(true);
   }
 });
+
+it('js redirect overrides url bar navigation ', async ({ page, server, browserName, trace }) => {
+  it.info().annotations.push({ type: 'issue', description: 'https://github.com/microsoft/playwright/issues/20749' });
+  it.skip(trace === 'on', 'tracing waits for snapshot that never arrives because pending navigation');
+
+  server.setRoute('/a', (req, res) => {
+    res.writeHead(200, { 'content-type': 'text/html' });
+    res.end(`
+        <body>
+          <script>
+            setTimeout(() => {
+              window.location.pathname = '/c';
+            }, 1000);
+          </script>
+        </body>
+      `);
+  });
+  const events = [];
+  server.setRoute('/b', async (req, res) => {
+    events.push('started b');
+    await new Promise(f => setTimeout(f, 2000));
+    res.writeHead(200, { 'content-type': 'text/html' });
+    res.end(`BBB`);
+    events.push('finished b');
+  });
+  server.setRoute('/c', async (req, res) => {
+    events.push('started c');
+    await new Promise(f => setTimeout(f, 2000));
+    res.writeHead(200, { 'content-type': 'text/html' });
+    res.end(`CCC`);
+    events.push('finished c');
+  });
+  await page.goto(server.PREFIX + '/a');
+  const error = await page.goto(server.PREFIX + '/b').then(r => null, e => e);
+  const expectEvents = (browserName === 'chromium') ?
+    ['started b', 'finished b'] :
+    ['started b', 'started c', 'finished b', 'finished c'];
+  await expect(() => expect(events).toEqual(expectEvents)).toPass();
+  expect(events).toEqual(expectEvents);
+  if (browserName === 'chromium') {
+    // Chromium prioritizes the url bar navigation over the js redirect.
+    expect(error).toBeFalsy();
+    await expect(page).toHaveURL(server.PREFIX + '/b');
+  } else if (browserName === 'webkit') {
+    expect(error.message).toContain('Navigation interrupted by another one');
+    await expect(page).toHaveURL(server.PREFIX + '/c');
+  } else if (browserName === 'firefox') {
+    expect(error.message).toContain('NS_BINDING_ABORTED');
+    await expect(page).toHaveURL(server.PREFIX + '/c');
+  }
+});
+
+it('should succeed on url bar navigation when there is pending navigation', async ({ page, server, browserName }) => {
+  it.info().annotations.push({ type: 'issue', description: 'https://github.com/microsoft/playwright/issues/21574' });
+  server.setRoute('/a', (req, res) => {
+    res.writeHead(200, { 'content-type': 'text/html' });
+    res.end(`
+      <body>
+        <script>
+          setTimeout(() => {
+            window.location.pathname = '/c';
+          }, 10);
+        </script>
+      </body>
+    `);
+  });
+  const events = [];
+  server.setRoute('/b', async (req, res) => {
+    events.push('started b');
+    await new Promise(f => setTimeout(f, 2000));
+    res.writeHead(200, { 'content-type': 'text/html' });
+    res.end(`BBB`);
+    events.push('finished b');
+  });
+  server.setRoute('/c', async (req, res) => {
+    events.push('started c');
+    await new Promise(f => setTimeout(f, 2000));
+    res.writeHead(200, { 'content-type': 'text/html' });
+    res.end(`CCC`);
+    events.push('finished c');
+  });
+  await page.goto(server.PREFIX + '/a');
+  await new Promise(f => setTimeout(f, 1000));
+  const error = await page.goto(server.PREFIX + '/b').then(r => null, e => e);
+  const expectEvents = ['started c', 'started b', 'finished c', 'finished b'];
+  await expect(() => expect(events).toEqual(expectEvents)).toPass({ timeout: 5000 });
+  expect(events).toEqual(expectEvents);
+  expect(error).toBeFalsy();
+  expect(page.url()).toBe(server.PREFIX + '/b');
+});
+
 
 it('should work when navigating to valid url', async ({ page, server }) => {
   const response = await page.goto(server.EMPTY_PAGE);
